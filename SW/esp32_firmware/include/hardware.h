@@ -6,12 +6,12 @@
 #define LCD_I2C_SCL			GPIO_NUM_33
 
 /* buttons */
-#define BTN1				GPIO_NUM_21
+#define BTN				GPIO_NUM_34
 
 /* encoder */
 #define ENC_A				GPIO_NUM_2
 #define ENC_B				GPIO_NUM_15
-#define ENC_BTN				GPIO_NUM_19
+#define ENC_BTN				GPIO_NUM_35
 
 /* stepper */
 #define STP_CLK_PIN			GPIO_NUM_17

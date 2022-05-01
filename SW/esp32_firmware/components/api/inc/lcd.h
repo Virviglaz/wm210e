@@ -36,4 +36,6 @@ private:
 	TaskHandle_t handle = NULL;
 };
 
+extern lcd *LCD;
+
 #endif /* __LCD_H__ */

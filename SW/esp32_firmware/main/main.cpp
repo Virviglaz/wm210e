@@ -1,5 +1,6 @@
 #include "platform.h"
 #include "lcd.h"
+#include "menu.h"
 
 extern "C" {
 	void app_main();
@@ -7,12 +8,11 @@ extern "C" {
 
 void app_main(void)
 {
-	lcd *LCD = new lcd();
+	/* create LCD */
+	LCD = new lcd();
 
-	LCD->clear();
-	LCD->print("Works");
 	while (1)
-		delay_ms(1000);
+		menu_start();
 
 	return;
 }

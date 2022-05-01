@@ -1,4 +1,6 @@
 idf_component_register(SRCS
+"src/menu.cpp"
+"src/thread_cut.cpp"
 
 INCLUDE_DIRS
 "../../include"

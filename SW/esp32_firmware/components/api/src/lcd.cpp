@@ -16,6 +16,7 @@ typedef struct {
 } *msg_t;
 
 static i2c *i2c_bus;
+lcd *LCD;
 
 static void write(uint8_t data)
 {
@@ -42,8 +43,6 @@ static struct hd44780_lcd hd44780 = {
 lcd::lcd()
 {
 	i2c_bus = new i2c(LCD_I2C_SDA, LCD_I2C_SCL);
-	i2c_bus->scan();
-
 	queue = xQueueCreate(LCD_QUEUE_SIZE, sizeof(msg_t));
 	xTaskCreate(lcd::handler, "lcd", LCD_TASK_SIZE, this, 1, &handle);
 }

@@ -124,7 +124,7 @@ void i2c::scan(uint8_t *dst)
 		}
 
 		res = i2c_master_write_byte(handle,
-			(addr << 1) | I2C_MASTER_WRITE, I2C_MASTER_ACK);
+			(addr << 1) | I2C_MASTER_WRITE, I2C_MASTER_NACK);
 		if (res) {
 			ESP_LOGE(bus_name, "I2C write address error: %s",
 				esp_err_to_name(res));
@@ -179,7 +179,7 @@ esp_err_t i2c::write(uint8_t addr, uint8_t *reg, uint16_t reg_size,
 		goto ret;
 	}
 
-	res = i2c_master_write(handle, reg, reg_size, I2C_MASTER_ACK);
+	res = i2c_master_write(handle, reg, reg_size, I2C_MASTER_NACK);
 	if (res) {
 		ESP_LOGE(bus_name, "I2C write error: %s",
 			esp_err_to_name(res));
@@ -187,7 +187,7 @@ esp_err_t i2c::write(uint8_t addr, uint8_t *reg, uint16_t reg_size,
 	}
 
 	if (buf && size) {
-		res = i2c_master_write(handle, buf, size, I2C_MASTER_ACK);
+		res = i2c_master_write(handle, buf, size, I2C_MASTER_LAST_NACK);
 		if (res) {
 			ESP_LOGE(bus_name, "I2C write error: %s",
 				esp_err_to_name(res));
@@ -251,7 +251,7 @@ esp_err_t i2c::read_reg(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t size)
 
 	/* write address */
 	res = i2c_master_write_byte(handle, (addr << 1) | I2C_MASTER_WRITE,
-		I2C_MASTER_ACK);
+		I2C_MASTER_NACK);
 	if (res) {
 		ESP_LOGE(bus_name, "I2C write address error: %s",
 			esp_err_to_name(res));
@@ -259,7 +259,7 @@ esp_err_t i2c::read_reg(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t size)
 	}
 
 	/* write destanation */
-	res = i2c_master_write_byte(handle, reg, I2C_MASTER_ACK);
+	res = i2c_master_write_byte(handle, reg, I2C_MASTER_NACK);
 	if (res) {
 		ESP_LOGE(bus_name, "I2C write byte error: %s",
 			esp_err_to_name(res));
@@ -276,7 +276,7 @@ esp_err_t i2c::read_reg(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t size)
 
 	/* write address for reading */
 	res = i2c_master_write_byte(handle, (addr << 1) | I2C_MASTER_READ,
-		I2C_MASTER_ACK);
+		I2C_MASTER_NACK);
 	
 	if (size > 1) {
 		res = i2c_master_read(handle, buf, size - 1, I2C_MASTER_ACK);
