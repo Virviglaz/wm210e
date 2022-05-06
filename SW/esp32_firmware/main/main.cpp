@@ -1,6 +1,6 @@
-#include "platform.h"
-#include "lcd.h"
+#include "hardware.h"
 #include "menu.h"
+#include "wifi.h"
 
 extern "C" {
 	void app_main();
@@ -8,8 +8,11 @@ extern "C" {
 
 void app_main(void)
 {
-	/* create LCD */
-	LCD = new lcd();
+	wifi_init("Tower", "555666777", "WM210E");
+
+	int res = hardware_init();
+	if (res)
+		return;
 
 	while (1)
 		menu_start();

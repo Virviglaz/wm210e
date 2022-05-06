@@ -3,6 +3,8 @@ idf_component_register(SRCS
 "src/esp_encoder.cpp"
 "src/esp_stepper.cpp"
 "src/esp_buttons.cpp"
+"src/wifi.c"
+"src/ota.cpp"
 
 INCLUDE_DIRS
 "inc"
