@@ -4,7 +4,7 @@ idf_component_register(SRCS
 "src/esp_stepper.cpp"
 "src/esp_buttons.cpp"
 "src/wifi.c"
-"src/ota.cpp"
+"src/ota.c"
 
 INCLUDE_DIRS
 "inc"
@@ -15,4 +15,5 @@ INCLUDE_DIRS
 # dependancy
 PRIV_REQUIRES
 	nvs_flash
+	app_update
 )

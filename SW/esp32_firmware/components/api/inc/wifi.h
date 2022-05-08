@@ -7,7 +7,7 @@ extern "C" {
 
 /**
  * @brief Initialize the Wifi and connect to the network.
- * 
+ *
  * @param wifi_uuid Access point name.
  * @param wifi_pass Access point password.
  * @param hostname Set the host name of device.
@@ -17,7 +17,7 @@ int wifi_init(const char *uuid, const char *pass, const char *hostname);
 
 /**
  * @brief Check wifi is connected.
- * 
+ *
  * @return true if connected.
  * @return false if not connected.
  */

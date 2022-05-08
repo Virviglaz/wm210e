@@ -30,7 +30,7 @@
 /* Fan */
 #define FAN_ENA_PIN			GPIO_NUM_15
 
-int hardware_init(void);
+int hardware_init(const char *version);
 void fan_start();
 void fan_stop();
 void motor_enable(bool state);
@@ -38,8 +38,8 @@ void motor_enable(bool state);
 /**
  * @brief Build string
  * 
- *
- * C:\Users\pasha\esp\esp-idf\components\esptool_py\esptool\esptool.py -p COM23 -b 460800 --before usb_reset --after hard_reset --chip esp32 write_flash --flash_mode dout --flash_freq 40m --flash_size detect 0x10000 esp32_firmware.bin 0x1000 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0xd000 ota_data_initial.bin
+ * scp.exe wm210e_esp32.bin pavel@192.168.0.108:/tmp
+ * ssh.exe pavel@192.168.0.108 "ota /tmp/wm210e_esp32.bin 5005 0xDEADBEEF new"
 */
 
 #endif /* __HARDWARE_H__ */

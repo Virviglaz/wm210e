@@ -1,15 +1,10 @@
 /* FreeRTOS */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
-#include "freertos/timers.h"
-#include "freertos/event_groups.h"
 
 /* STD */
 #include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
 
 /* ESP32 */
 #include "esp_wifi.h"
@@ -80,7 +75,7 @@ static void handler(void *param)
 
 	ESP_GOTO_ON_ERROR(esp_event_loop_create_default(), err, tag,
 		"event loop create failed");
-	
+
 	esp_netif_create_default_wifi_sta();
 
 	const wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();

@@ -1,9 +1,9 @@
-#include "thread_cut.h"
-#include "lcd.h"
 #include "platform.h"
 #include "hardware.h"
+#include "lcd.h"
 #include "esp_buttons.h"
 #include "motor_ctrl.h"
+#include "thread_cut.h"
 
 static const struct thread {
 	const char *name;

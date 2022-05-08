@@ -3,54 +3,51 @@
 
 #include <stdint.h>
 
-/* FreeRTOS */
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
-
 /**
  * @brief OTA initialization settings struct.
- * 
  */
 typedef struct {
-	/** Application name */
-	const char *app_name;
-
-	/** Wifi access point name */
-	const char *wifi_uuid;
-
-	/** Wifi access point password */
-	const char *wifi_pass;
-
 	/** OTA server IP address */
 	const char *server_ip;
 
 	/** OTA server port */
-	uint32_t port;
-} ota_h;
+	uint32_t server_port;
 
+	/** Device serial number for logging purpose */
+	uint32_t serial_number;
+
+	/** Check new firmware interval in ms */
+	uint32_t check_interval_ms;
+
+	/** Magic word to recognize specific application */
+	uint32_t uniq_magic_word;
+
+	/** Actual version of application, NULL to get automatically from IDF */
+	const char *version;
+
+	/** GPIO workaround callback if required */
+	void (*gpio_ota_workaround)(void);
+} ota_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
- * @brief Over-the-air self firmware update class.
- * 
+ * @brief Start OTA client.
+ *
+ * @param settings Pointer to OTA settings.
+ * @return int 0 if success, error code if fail.
  */
-class ota
-{
-public:
-	/**
-	 * @brief Create the ota object.
-	 * 
-	 * @param settings Pointer to the OTA setting struct.
-	 */
-	ota(ota_h *settings);
+int ota_start(ota_t *settings);
 
-	/**
-	 * @brief Destroy the ota object
-	 * 
-	 */
-	~ota();
-private:
-};
+/**
+ * @brief Confirm that actual firmware is valid.
+ */
+void ota_confirm(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __OTA_H__ */

@@ -9,6 +9,9 @@
 #define BIT(x)				(1 << x)
 #endif
 
+#define STRINGIFY(X)			#X
+#define TO_STRING(X)			STRINGIFY(X)
+
 /* FreeRTOS */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

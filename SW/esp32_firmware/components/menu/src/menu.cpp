@@ -29,14 +29,14 @@ static const struct menu {
 	},
 	[2] = {
 		.first_row = "SMOOTH GO",
-		.second_row = "LEFT",
+		.second_row = "RIGHT",
 		.handler = smooth_go_handler,
 		.arg = 0,
 		.next = &menu[3],
 	},
 	[3] = {
 		.first_row = "SMOOTH GO",
-		.second_row = "RIGHT",
+		.second_row = "LEFT",
 		.handler = smooth_go_handler,
 		.arg = 1,
 		.next = &menu[0],
