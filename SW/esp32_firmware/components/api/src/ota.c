@@ -1,6 +1,7 @@
 /* FreeRTOS */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 /* ESP */
 #include "esp_netif.h"
@@ -12,25 +13,24 @@
 /* STD */
 #include <string.h>
 
+/* wifi & ota */
 #include "wifi.h"
 #include "ota.h"
 
-#define TOTAL_MESSAGE_LEN			1400
+#define DEFAULT_CHECK_INTERVAL_MS		5000
+#define DEFAULT_MESSAGE_SIZE			1000
+#define DEFAULT_UNIQ_MESSAGE_WORD		0xDEADBEEF
+#define HANDLER_TASK_STACK_SIZE			0x2000
 #define VERSION_STRING_LEN			16
-#define RELEASE_MESSAGE_LEN			1024
-#define SERVER_TIMEOUT				5000
-#define MAX_FW_FILE_SIZE_MB			4
-#define BYTES_TO_MB(x)				(x * 1024 * 1024)
-
 #define OTA_PAGE_SIZE				1000
 #define OTA_CMD_GET_LATEST_VERSION		0xFE3378A0
 #define OTA_CMD_GET_PAGE_DATA			0x47BF1975
 #define MESSAGE_CMD				0x3789A3B0
-#define OTA_HEADER_SIZE	(OTA_PAGE_SIZE + sizeof(struct ota_version_header))
+#define OTA_HEADER_SIZE	(OTA_PAGE_SIZE + sizeof(struct ota_header))
 
 static const char *tag = "ota";
 
-struct ota_version_header {
+struct ota_header {
 	uint32_t magic_word;
 	uint32_t cmd;
 	uint32_t serial_number;
@@ -38,27 +38,20 @@ struct ota_version_header {
 	uint32_t fw_file_size;
 	uint32_t page_size;
 	uint32_t page_num;
-	uint32_t data[];
-};
-
-struct message_header {
-	uint32_t magic_word;
-	uint32_t cmd;
-	uint32_t serial_number;
-	char vers[VERSION_STRING_LEN];
-	uint32_t reserved[4];
-	uint32_t message_size;
-	char message[];
+	uint8_t data[];
 };
 
 static ota_t *s;
 static uint32_t fw_file_size = 0;
 static uint32_t total_bytes = 0;
 static bool is_confirmed = false;
+static bool is_running = false;
+static SemaphoreHandle_t wait;
+
 static int get_latest_version(int sockfd, char *server_version,
 	uint32_t *fw_size, uint32_t *page_size)
 {
-	struct ota_version_header msg = {
+	struct ota_header msg = {
 		.magic_word = s->uniq_magic_word,
 		.cmd = OTA_CMD_GET_LATEST_VERSION,
 		.serial_number = s->serial_number,
@@ -85,17 +78,17 @@ static int get_latest_version(int sockfd, char *server_version,
 	return 0;
 }
 
-static struct ota_version_header *get_next_page(int sockfd, uint32_t page,
-	uint32_t page_size, uint8_t *buffer)
+static struct ota_header *get_next_page(int sockfd, uint32_t page,
+	uint32_t page_size, uint32_t *buffer)
 {
-	struct ota_version_header msg = {
+	struct ota_header msg = {
 		.magic_word = s->uniq_magic_word,
 		.cmd = OTA_CMD_GET_PAGE_DATA,
 		.serial_number = s->serial_number,
 		.page_size = page_size,
 		.page_num = page,
 	};
-	struct ota_version_header *ret_msg = (void *)buffer;
+	struct ota_header *ret_msg = (struct ota_header *)buffer;
 	int message_size = page_size + sizeof(msg);
 	int bytes_written;
 	int bytes_read;
@@ -139,6 +132,7 @@ static void start_update_process(int sockfd)
 	uint32_t bytes_written = 0;
 	uint64_t timestamp = esp_timer_get_time();
 	uint64_t prev_timestamp_s = timestamp / 1000000u;
+	(void)ret;
 
 	ESP_GOTO_ON_ERROR(get_latest_version(sockfd, server_version,
 		&fw_size, &page_size), fail, tag, "get latest version failed");
@@ -174,36 +168,24 @@ static void start_update_process(int sockfd)
 		return;
 	}
 
-	if (fw_size != OTA_WITH_SEQUENTIAL_WRITES) {
-		/*
-		 * If input image size is 0 or OTA_SIZE_UNKNOWN,
-		 * erase entire partition
-		 */
-		if ((fw_size == 0) || (fw_size == OTA_SIZE_UNKNOWN)) {
-			ret = esp_partition_erase_range(partition, 0,
-				partition->size);
-		} else {
-			const int aligned_erase_size =
-				(fw_size + SPI_FLASH_SEC_SIZE - 1) \
-					& ~(SPI_FLASH_SEC_SIZE - 1);
-			ret = esp_partition_erase_range(partition, 0,
-				aligned_erase_size);
-		}
-		if (ret != ESP_OK)
-			return;
-	}
+	/*ESP_GOTO_ON_ERROR(esp_partition_erase_range(partition, 0,
+				partition->size), fail, tag,
+				"fail to erase partition");*/
 
 	ESP_GOTO_ON_ERROR(esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &handle),
 		fail, tag, "ota begin failed");
 
 	bytes_left = fw_size;
 
-	uint8_t *buffer = malloc(OTA_HEADER_SIZE);
+	uint32_t *buffer = malloc(OTA_HEADER_SIZE);
 	if (!buffer)
 		goto no_mem;
 
+	if (s->gpio_ota_workaround)
+		s->gpio_ota_workaround();
+
 	while (bytes_left) {
-		struct ota_version_header *msg = get_next_page(sockfd,
+		struct ota_header *msg = get_next_page(sockfd,
 			page_num, page_size, buffer);
 		if (!msg)
 			goto abort;
@@ -224,9 +206,6 @@ static void start_update_process(int sockfd)
 		}
 	};
 
-	if (s->gpio_ota_workaround)
-		s->gpio_ota_workaround();
-
 	ESP_GOTO_ON_ERROR(esp_ota_end(handle), abort, tag, "Ota end failed");
 	ESP_GOTO_ON_ERROR(esp_ota_set_boot_partition(partition), abort, tag,
 		"setting boot partition error");
@@ -238,13 +217,13 @@ static void start_update_process(int sockfd)
 
 	esp_restart();
 
-	return;
-
 abort:
 	free(buffer);
 no_mem:
 	esp_ota_abort(handle);
 fail:
+	if (s->gpio_ota_cancel_workaround)
+		s->gpio_ota_cancel_workaround();
 	return;
 }
 
@@ -276,30 +255,40 @@ static void handler(void *args)
 	vTaskDelay(pdMS_TO_TICKS(s->check_interval_ms));
 
 	while (1) {
-		int sockfd;
-		/* Note:
-		 * we start the sw udpater only if the
-		 * available task is running
-		 */
-		vTaskDelay(pdMS_TO_TICKS(s->check_interval_ms));
+		if (xSemaphoreTake(wait,
+			pdMS_TO_TICKS(s->check_interval_ms)) == pdTRUE)
+			break;
+
 		if (wifi_is_connected()) {
-			sockfd = connect_to_ota_server();
+			int sockfd = connect_to_ota_server();
 			if (sockfd > 0) {
 				start_update_process(sockfd);
 				close(sockfd);
 			}
 		}
 	}
+
+	vSemaphoreDelete(wait);
+	is_running = false;
+	vTaskDelete(NULL);
 }
 
 int ota_start(ota_t *settings)
 {
-	if (!is_confirmed) {
-		ESP_LOGE(tag, "Image is not yet confirmed, cannot run updater");
+	if (is_running) {
+		ESP_LOGE(tag, "Software updater is already running");
 		return EINVAL;
 	}
 
 	s = settings;
+	wait = xSemaphoreCreateBinary();
+
+	if (!s->check_interval_ms)
+		s->check_interval_ms = DEFAULT_CHECK_INTERVAL_MS;
+	if(!s->message_size)
+		s->message_size = DEFAULT_MESSAGE_SIZE;
+	if (!s->uniq_magic_word)
+		s->uniq_magic_word = DEFAULT_UNIQ_MESSAGE_WORD;
 
 	if (!s->version) {
 		static char vers[32];
@@ -308,14 +297,37 @@ int ota_start(ota_t *settings)
 		s->version = vers;
 	}
 
-	xTaskCreate(handler, tag, 0x1000, 0, 1, 0);
+	if (xTaskCreate(handler, tag,
+		HANDLER_TASK_STACK_SIZE, 0, 1, 0) != pdTRUE)
+		return EINVAL;
 
+	is_running = true;
 	return 0;
 }
 
-void ota_confirm(void)
+int ota_confirm(void)
 {
-	esp_ota_mark_app_valid_cancel_rollback();
+	if (is_running) {
+		ESP_LOGE(tag, "Software updater is running, can't confirm");
+		return EINVAL;
+	}
+
+	if (esp_ota_mark_app_valid_cancel_rollback() != ESP_OK) {
+		ESP_LOGE(tag, "Can't confirm running image is correct");
+		return EINVAL;
+	}
 
 	is_confirmed = true;
+	return 0;
+}
+
+int ota_stop(void)
+{
+	if (!is_running) {
+		ESP_LOGE(tag, "Software updater is not running");
+		return EINVAL;
+	}
+
+	xSemaphoreGive(wait);
+	return 0;
 }

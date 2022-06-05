@@ -4,7 +4,7 @@
 #include "hardware.h"
 
 #define LCD_I2C_ADDR			0x27
-#define LCD_TASK_SIZE			2048
+#define LCD_TASK_SIZE			0x1000
 #define LCD_QUEUE_SIZE			4
 #define MAX_MESSAGE_SIZE		36
 #define LCD_ROW_LENGHT			16

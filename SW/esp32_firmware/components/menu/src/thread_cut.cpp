@@ -79,7 +79,7 @@ int thread_cut_handler(int arg)
 {
 	bool is_done = false;
 	bool proceed = false;
-	bool dir = arg == 0;
+	bool dir = arg == !0;
 	wait = xSemaphoreCreateBinary();
 	buttons *btn = new buttons();
 	btn->add(ENC_BTN, enc_btn_handler, NEGEDGE, &proceed);

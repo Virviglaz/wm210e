@@ -107,13 +107,14 @@ i2c::~i2c()
 
 void i2c::scan(uint8_t *dst)
 {
+	xSemaphoreTake(lock, portMAX_DELAY);
+
 	for (int addr = 1; addr != 0x7F; addr++) {
-		xSemaphoreTake(lock, portMAX_DELAY);
 
 		i2c_cmd_handle_t handle = i2c_cmd_link_create();
 		if (!handle) {
 			ESP_LOGE(bus_name, "driver install failed: no memory");
-			return;
+			break;
 		}
 
 		esp_err_t res = i2c_master_start(handle);
@@ -141,8 +142,9 @@ void i2c::scan(uint8_t *dst)
 		}
 ret:
 		i2c_cmd_link_delete(handle);
-		xSemaphoreGive(lock);
 	}
+
+	xSemaphoreGive(lock);
 }
 
 /*
@@ -157,15 +159,16 @@ ret:
 esp_err_t i2c::write(uint8_t addr, uint8_t *reg, uint16_t reg_size,
 	uint8_t *buf, uint16_t size)
 {
+	esp_err_t res;
 	xSemaphoreTake(lock, portMAX_DELAY);
 
 	i2c_cmd_handle_t handle = i2c_cmd_link_create();
 	if (!handle) {
-		ESP_LOGE(bus_name, "driver install failed: no memory");
-		return ESP_ERR_NO_MEM;
+		res = ESP_ERR_NO_MEM;
+		goto no_mem;
 	}
 
-	esp_err_t res = i2c_master_start(handle);
+	res = i2c_master_start(handle);
 	if (res) {
 		ESP_LOGE(bus_name, "start error: %s", esp_err_to_name(res));
 		goto ret;
@@ -208,6 +211,7 @@ esp_err_t i2c::write(uint8_t addr, uint8_t *reg, uint16_t reg_size,
 
 ret:
 	i2c_cmd_link_delete(handle);
+no_mem:
 	xSemaphoreGive(lock);
 	return res;
 }
@@ -235,15 +239,18 @@ esp_err_t i2c::write_reg(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t size)
  */
 esp_err_t i2c::read_reg(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t size)
 {
+	esp_err_t res;
 	xSemaphoreTake(lock, portMAX_DELAY);
 
 	i2c_cmd_handle_t handle = i2c_cmd_link_create();
 	if (!handle) {
+
 		ESP_LOGE(bus_name, "driver install failed: no memory");
-		return ESP_ERR_NO_MEM;
+		res = ESP_ERR_NO_MEM;
+		goto no_mem;
 	}
 
-	esp_err_t res = i2c_master_start(handle);
+	res = i2c_master_start(handle);
 	if (res) {
 		ESP_LOGE(bus_name, "I2C start error: %s", esp_err_to_name(res));
 		goto ret;
@@ -311,6 +318,7 @@ esp_err_t i2c::read_reg(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t size)
 			esp_err_to_name(res));
 ret:
 	i2c_cmd_link_delete(handle);
+no_mem:
 	xSemaphoreGive(lock);
 	return res;
 }

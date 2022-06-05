@@ -2,6 +2,8 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
+set(PROJECT_VER "VERSION_0.08")
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(wm210e_esp32)
 
