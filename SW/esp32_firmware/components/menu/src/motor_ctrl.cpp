@@ -6,51 +6,63 @@
 
 /* ESP32 drivers */
 #include "driver/gpio.h"
-#include "driver/gptimer.h"
+#include "driver/timer.h"
 #include "esp_timer.h"
+#include "hal/gpio_ll.h"
+
+/* Hardware timer clock divider */
+#define TIMER_DIVIDER		(16)
+/* convert counter value to seconds */
+#define TIMER_SCALE		(TIMER_BASE_CLK / (TIMER_DIVIDER * 1000000UL))
+#define GPIO_SET(pin, state)	gpio_ll_set_level(&GPIO, pin, state)
+#define GPIO_GET(pin)		gpio_ll_get_level(&GPIO, pin)
 
 class delayed_action
 {
 public:
-	delayed_action(uint32_t period_us, void (*action)(void)) :
-		action(action)
+	delayed_action(uint32_t period_us, void (*action)(void),
+		timer_group_t group = TIMER_GROUP_0,
+		timer_idx_t timer = TIMER_0) : action(action),
+			group(group), timer(timer)
 	{
-		gptimer_config_t timer_config;
-		timer_config.clk_src = GPTIMER_CLK_SRC_APB;
-		timer_config.direction = GPTIMER_COUNT_UP;
-		timer_config.resolution_hz = 1u * 1000u * 1000u;
-		ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
-
-		gptimer_event_callbacks_t event;
-		event.on_alarm = timer_event;
-		ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &event, this));
-
-		gptimer_alarm_config_t alarm_config;
-		alarm_config.alarm_count = period_us;
-		ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+		const timer_config_t config = {
+			.alarm_en = TIMER_ALARM_EN,
+			.counter_en = TIMER_START,
+			.intr_type = TIMER_INTR_LEVEL,
+			.counter_dir = TIMER_COUNT_UP,
+			.auto_reload = TIMER_AUTORELOAD_EN,
+			.divider = TIMER_DIVIDER,
+		};
+		ESP_ERROR_CHECK(timer_init(group, timer, &config));
+		ESP_ERROR_CHECK(timer_set_counter_value(group, timer, 0));
+		ESP_ERROR_CHECK(timer_enable_intr(group, timer));
+		ESP_ERROR_CHECK(timer_isr_callback_add(group, timer, callback,
+			this, 0));
+		ESP_ERROR_CHECK(timer_set_alarm_value(group, timer, period_us));
 	}
 
 	~delayed_action()
 	{
-		ESP_ERROR_CHECK(gptimer_del_timer(gptimer));
+		ESP_ERROR_CHECK(timer_disable_intr(group, timer));
+		ESP_ERROR_CHECK(timer_isr_callback_remove(group, timer));
+		ESP_ERROR_CHECK(timer_deinit(group, timer));
 	}
 
-	IRAM_ATTR void run()
+	void IRAM_ATTR run()
 	{
-		gptimer_set_raw_count(gptimer, 0);
-		gptimer_start(gptimer);
+		timer_group_set_counter_enable_in_isr(group, timer, TIMER_START);
 	}
 
 private:
-	gptimer_handle_t gptimer;
 	void (*action)(void);
-	IRAM_ATTR static bool timer_event(gptimer_handle_t timer,
-		const gptimer_alarm_event_data_t *edata, void *user_data)
+	timer_group_t group;
+	timer_idx_t timer;
+	static bool IRAM_ATTR callback(void *args)
 	{
-		delayed_action *m = (delayed_action *)user_data;
-		gptimer_stop(timer);
+		delayed_action *m = (delayed_action *)args;
+		timer_group_set_counter_enable_in_isr(m->group, m->timer,
+			TIMER_PAUSE);
 		m->action();
-
 		return true;
 	}
 };
@@ -93,7 +105,7 @@ public:
 
 		fan_start();
 
-		//pull_down_clk = new delayed_action(1, pull_down_clk_handler);
+		pull_down_clk = new delayed_action(1, pull_down_clk_handler);
 	}
 
 	~stepper_ctrl()
@@ -109,37 +121,35 @@ public:
 
 		fan_stop();
 
-		//delete(pull_down_clk);
+		delete(pull_down_clk);
 	}
 
-	uint32_t get_rp_cnt()
+	uint32_t get_rotations_counter()
 	{
-		return cnt;
+		return rotations;
 	}
 private:
 	uint32_t ratio;
 	uint32_t cnt = 0;
-	uint32_t rpm_cnt = 0;
+	uint32_t rotations = 0;
 	bool dir_invert = false;
 	enum prev_p { ENC_P_A, ENC_P_B } prev_p = ENC_P_A;
-	//delayed_action *pull_down_clk;
+	delayed_action *pull_down_clk;
 
 	static void pull_down_clk_handler()
 	{
-		gpio_set_level(STP_CLK_PIN, 0);
+		GPIO_SET(STP_CLK_PIN, 0);
 	}
 
 	static void motor_step(stepper_ctrl *s)
 	{
-		gpio_set_level(STP_CLK_PIN, 0);
-
 		s->cnt++;
 		if (s->cnt == s->ratio) {
 			s->cnt = 0;
-			gpio_set_level(STP_CLK_PIN, 1);
+			GPIO_SET(STP_CLK_PIN, 1);
 
-			//delayed_action *d = s->pull_down_clk;
-			//d->run();
+			delayed_action *d = s->pull_down_clk;
+			d->run();
 		}
 	}
 
@@ -151,11 +161,11 @@ private:
 
 		s->prev_p = ENC_P_A;
 
-		if (gpio_get_level(EXT_ENC_A)) {
-			if (gpio_get_level(EXT_ENC_B))
-				gpio_set_level(STP_DIR_PIN, s->dir_invert);
+		if (GPIO_GET(EXT_ENC_A)) {
+			if (GPIO_GET(EXT_ENC_B))
+				GPIO_SET(STP_DIR_PIN, s->dir_invert);
 			else
-				gpio_set_level(STP_DIR_PIN, !s->dir_invert);
+				GPIO_SET(STP_DIR_PIN, !s->dir_invert);
 		}
 
 		motor_step(s);
@@ -176,7 +186,7 @@ private:
 	{
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
 
-		s->rpm_cnt++;
+		s->rotations++;
 	}
 };
 
@@ -200,7 +210,8 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 	while (1) {
 		if (xSemaphoreTake(wait, pdMS_TO_TICKS(1000)) == pdTRUE)
 			break;
-		LCD->print(SECOND_ROW, CENTER, "%u", stepper_thread_cut->get_rp_cnt());
+		LCD->print(SECOND_ROW, CENTER, "%5.u",
+			stepper_thread_cut->get_rotations_counter());
 	}
 
 	vSemaphoreDelete(wait);
