@@ -53,7 +53,7 @@ int smooth_go_handler(int arg)
 	bool proceed = false;
 	bool dir = arg == 0;
 	wait = xSemaphoreCreateBinary();
-	buttons *btn = new buttons();
+	buttons *btn = new buttons(10);
 	btn->add(ENC_BTN, enc_btn_handler, NEGEDGE, &proceed);
 	btn->add(ENC_A, enc_rol_handler);
 	btn->add(BTN1, btn1_handler, NEGEDGE, &is_done);

@@ -27,7 +27,6 @@
 
 /* ESP32 drivers */
 #include "driver/gpio.h"
-#include "driver/gptimer.h"
 
 #include "sdkconfig.h"
 #include "esp_system.h"

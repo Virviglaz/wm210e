@@ -12,20 +12,23 @@ static const struct menu {
 	int (*handler)(int arg);
 	const int arg;
 	const struct menu *next;
+	const struct menu *prev;
 } menu[] = {
 	[0] = {
 		.first_row = "METRIC THREAD",
 		.second_row = "RIGHT",
 		.handler = thread_cut_handler,
-		.arg = 0,
+		.arg = 1,
 		.next = &menu[1],
+		.prev = &menu[3],
 	},
 	[1] = {
 		.first_row = "METRIC THREAD",
 		.second_row = "LEFT",
 		.handler = thread_cut_handler,
-		.arg = 1,
+		.arg = 0,
 		.next = &menu[2],
+		.prev = &menu[0],
 	},
 	[2] = {
 		.first_row = "SMOOTH GO",
@@ -33,6 +36,7 @@ static const struct menu {
 		.handler = smooth_go_handler,
 		.arg = 0,
 		.next = &menu[3],
+		.prev = &menu[1],
 	},
 	[3] = {
 		.first_row = "SMOOTH GO",
@@ -40,6 +44,7 @@ static const struct menu {
 		.handler = smooth_go_handler,
 		.arg = 1,
 		.next = &menu[0],
+		.prev = &menu[2],
 	},
 };
 
@@ -55,17 +60,24 @@ static void enc_btn_handler(void *arg)
 
 static void enc_rol_handler(void *arg)
 {
-	current_menu = (struct menu *)current_menu->next;
+	if (gpio_get_level(ENC_B))
+		current_menu = (struct menu *)current_menu->next;
+	else
+		current_menu = (struct menu *)current_menu->prev;
+
 	xSemaphoreGive(wait);
 }
+
+static void enc_rol_dummy(void *arg) {}
 
 void menu_start(void)
 {
 	bool proceed = false;
 	wait = xSemaphoreCreateBinary();
-	buttons *btn = new buttons();
+	buttons *btn = new buttons(10);
 	btn->add(ENC_BTN, enc_btn_handler, NEGEDGE, &proceed);
 	btn->add(ENC_A, enc_rol_handler);
+	btn->add(ENC_B, enc_rol_dummy);
 
 	while (1) {
 		LCD->clear();
