@@ -105,7 +105,7 @@ public:
 
 		fan_start();
 
-		pull_down_clk = new delayed_action(200, pull_down_clk_handler);
+		pull_down_clk = new delayed_action(500, pull_down_clk_handler);
 	}
 
 	~stepper_ctrl()
@@ -128,6 +128,7 @@ public:
 	{
 		return rotations;
 	}
+	uint32_t err_cnt = 0;
 private:
 	uint32_t ratio;
 	uint32_t cnt = 0;
@@ -146,6 +147,8 @@ private:
 		s->cnt++;
 		if (s->cnt == s->ratio) {
 			s->cnt = 0;
+			if (GPIO_GET(STP_CLK_PIN))
+				s->err_cnt++;
 			GPIO_SET(STP_CLK_PIN, 1);
 
 			delayed_action *d = s->pull_down_clk;
@@ -210,7 +213,9 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 	while (1) {
 		if (xSemaphoreTake(wait, pdMS_TO_TICKS(1000)) == pdTRUE)
 			break;
-		LCD->print(SECOND_ROW, CENTER, "%5.u",
+		LCD->print(FIRST_ROW, CENTER, "ERRORS: %u   ",
+			stepper_thread_cut->err_cnt);
+		LCD->print(SECOND_ROW, CENTER, "ROTATIONS: %u   ",
 			stepper_thread_cut->get_rotations_counter());
 	}
 

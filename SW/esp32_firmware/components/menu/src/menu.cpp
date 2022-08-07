@@ -5,6 +5,46 @@
 #include "esp_buttons.h"
 #include "thread_cut.h"
 #include "smooth_go.h"
+#include "wifi.h"
+#include "ota.h"
+#include "esp_ota_ops.h"
+
+static void gpio_ota_workaround(void)
+{
+	/* IO2 workaround */
+	gpio_reset_pin(GPIO_NUM_2);
+	gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
+	gpio_set_level(GPIO_NUM_2, 0);
+}
+
+static ota_t ota = {
+	.server_ip = "192.168.0.108",
+	.server_port = 5005,
+	.serial_number = 1,
+	.check_interval_ms = 0,
+	.message_size = 0,
+	.uniq_magic_word = 0,
+	.version = 0, /* set later */
+	.gpio_ota_workaround = gpio_ota_workaround,
+	.gpio_ota_cancel_workaround = 0,
+};
+
+static int start_fw_update(int arg)
+{
+	const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+	ota.version = app_desc->version;
+
+	wifi_init("Tower", "555666777", "WM210E");
+	ota_start(&ota);
+
+	INFO("Firmware version: %s", ota.version);
+
+	LCD->clear();
+	LCD->print(FIRST_ROW, CENTER, "START FW UPDATE");
+	delay_s(3);
+
+	return 0;
+}
 
 static const struct menu {
 	const char *first_row;
@@ -20,7 +60,7 @@ static const struct menu {
 		.handler = thread_cut_handler,
 		.arg = 1,
 		.next = &menu[1],
-		.prev = &menu[3],
+		.prev = &menu[4],
 	},
 	[1] = {
 		.first_row = "METRIC THREAD",
@@ -43,9 +83,17 @@ static const struct menu {
 		.second_row = "LEFT",
 		.handler = smooth_go_handler,
 		.arg = 1,
-		.next = &menu[0],
+		.next = &menu[4],
 		.prev = &menu[2],
 	},
+	[4] = {
+		.first_row = "START",
+		.second_row = "FW UPDATE",
+		.handler = start_fw_update,
+		.arg = 0,
+		.next = &menu[0],
+		.prev = &menu[3],
+	}
 };
 
 static struct menu *current_menu = (struct menu *)&menu[0];

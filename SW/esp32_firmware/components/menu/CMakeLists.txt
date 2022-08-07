@@ -13,6 +13,7 @@ INCLUDE_DIRS
 PRIV_REQUIRES
 drivers
 api
+app_update
 )
 
 add_compile_definitions(
