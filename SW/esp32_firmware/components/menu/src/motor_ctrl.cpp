@@ -27,7 +27,7 @@ public:
 	{
 		const timer_config_t config = {
 			.alarm_en = TIMER_ALARM_EN,
-			.counter_en = TIMER_START,
+			.counter_en = TIMER_PAUSE,
 			.intr_type = TIMER_INTR_LEVEL,
 			.counter_dir = TIMER_COUNT_UP,
 			.auto_reload = TIMER_AUTORELOAD_EN,
@@ -105,7 +105,7 @@ public:
 
 		fan_start();
 
-		pull_down_clk = new delayed_action(1, pull_down_clk_handler);
+		pull_down_clk = new delayed_action(200, pull_down_clk_handler);
 	}
 
 	~stepper_ctrl()
@@ -182,7 +182,7 @@ private:
 		motor_step(s);
 	}
 
-	static void isr_z(void *params)
+	static void IRAM_ATTR isr_z(void *params)
 	{
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
 
