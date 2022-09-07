@@ -8,9 +8,7 @@
 #include "wifi.h"
 #include "ota.h"
 #include "esp_ota_ops.h"
-#include <vector>
-#include <string>
-#include <atomic>
+#include "menu.h"
 
 static void gpio_ota_workaround(void)
 {
@@ -57,58 +55,36 @@ struct menu_item
 	const int arg;
 };
 
-class Menu
-{
-public:
-	void next() {
-		i++;
-		if (i == list.size())
-			i = 0;
-	}
+static const std::vector<menu_item> list = { {
+	.first_row = "METRIC THREAD",
+	.second_row = "RIGHT",
+	.handler = thread_cut_handler,
+	.arg = 1,
+}, {
+	.first_row = "METRIC THREAD",
+	.second_row = "LEFT",
+	.handler = thread_cut_handler,
+	.arg = 0,
+}, {
+	.first_row = "SMOOTH GO",
+	.second_row = "RIGHT",
+	.handler = smooth_go_handler,
+	.arg = 0,
+}, {
+	.first_row = "SMOOTH GO",
+	.second_row = "LEFT",
+	.handler = smooth_go_handler,
+	.arg = 1,
+}, {
+	.first_row = "START",
+	.second_row = "FW UPDATE",
+	.handler = start_fw_update,
+	.arg = 0,
+} };
 
-	void prev() {
-		if (i)
-			i--;
-		else
-			i = list.size() - 1;
-	}
-
-	const menu_item *get() {
-		return &list.at(i);
-	}
-private:
-	std::atomic<int> i { 0 };
-	std::vector<menu_item> list = { {
-			.first_row = "METRIC THREAD",
-			.second_row = "RIGHT",
-			.handler = thread_cut_handler,
-			.arg = 1,
-		}, {
-			.first_row = "METRIC THREAD",
-			.second_row = "LEFT",
-			.handler = thread_cut_handler,
-			.arg = 0,
-		}, {
-			.first_row = "SMOOTH GO",
-			.second_row = "RIGHT",
-			.handler = smooth_go_handler,
-			.arg = 0,
-		}, {
-			.first_row = "SMOOTH GO",
-			.second_row = "LEFT",
-			.handler = smooth_go_handler,
-			.arg = 1,
-		}, {
-			.first_row = "START",
-			.second_row = "FW UPDATE",
-			.handler = start_fw_update,
-			.arg = 0,
-		} };
-
-};
 
 static SemaphoreHandle_t wait;
-static Menu menu;
+static Menu<menu_item> menu(list);
 
 static void enc_btn_handler(void *arg)
 {

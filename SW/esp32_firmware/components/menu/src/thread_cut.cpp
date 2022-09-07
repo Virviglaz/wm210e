@@ -4,66 +4,46 @@
 #include "esp_buttons.h"
 #include "motor_ctrl.h"
 #include "thread_cut.h"
+#include "menu.h"
 
-static const struct thread {
-	const char *name;
+struct menu_item {
+	std::string name;
 	const uint32_t step;
-	const struct thread *next;
-	const struct thread *prev;
-} thread[] = { {
-		.name = "M2x0.4",
-		.step = 100,
-		.next = &thread[1],
-		.prev = &thread[9],
-	}, {
-		.name = "M3x0.5",
-		.step = 80,
-		.next = &thread[2],
-		.prev = &thread[0],
-	}, {
-		.name = "M4x0.7",
-		.step = 57,
-		.next = &thread[3],
-		.prev = &thread[1],
-	}, {
-		.name = "M5x0.8",
-		.step = 50,
-		.next = &thread[4],
-		.prev = &thread[2],
-	}, {
-		.name = "M6x1.0",
-		.step = 40,
-		.next = &thread[5],
-		.prev = &thread[3],
-	}, {
-		.name = "M8x1.25",
-		.step = 32,
-		.next = &thread[6],
-		.prev = &thread[4],
-	}, {
-		.name = "M10x1.5",
-		.step = 27,
-		.next = &thread[7],
-		.prev = &thread[5],
-	}, {
-		.name = "M12x1.75",
-		.step = 23,
-		.next = &thread[8],
-		.prev = &thread[6],
-	}, {
-		.name = "M14x2.0",
-		.step = 20,
-		.next = &thread[9],
-		.prev = &thread[7],
-	}, {
-		.name = "M16x2.0",
-		.step = 20,
-		.next = &thread[0],
-		.prev = &thread[8],
-	}
 };
 
-static struct thread *current_thread = (struct thread *)&thread[0];
+static const std::vector<menu_item> list { {
+	.name = "M2x0.4",
+	.step = 100,
+}, {
+	.name = "M3x0.5",
+	.step = 80,
+}, {
+	.name = "M4x0.7",
+	.step = 57,
+}, {
+	.name = "M5x0.8",
+	.step = 50,
+}, {
+	.name = "M6x1.0",
+	.step = 40,
+}, {
+	.name = "M8x1.25",
+	.step = 32,
+}, {
+	.name = "M10x1.5",
+	.step = 27,
+}, {
+	.name = "M12x1.75",
+	.step = 23,
+}, {
+	.name = "M14x2.0",
+	.step = 20,
+}, {
+	.name = "M16x2.0",
+	.step = 20,
+} };
+
+static Menu<menu_item> menu(list);
 static SemaphoreHandle_t wait;
 
 static void enc_btn_handler(void *arg)
@@ -76,9 +56,9 @@ static void enc_btn_handler(void *arg)
 static void enc_rol_handler(void *arg)
 {
 	if (gpio_get_level(ENC_B))
-		current_thread = (struct thread *)current_thread->next;
+		menu.next();
 	else
-		current_thread = (struct thread *)current_thread->prev;
+		menu.prev();
 
 	xSemaphoreGive(wait);
 }
@@ -105,9 +85,10 @@ int thread_cut_handler(int arg)
 	btn->add(BTN1, btn1_handler, NEGEDGE, &is_done);
 
 	while (1) {
+		const menu_item *item = menu.get();
 		LCD->clear();
 		LCD->print(FIRST_ROW, CENTER, "%s %s",
-			current_thread->name, arg ? "LEFT" : "RIGHT");
+			item->name.c_str(), arg ? "LEFT" : "RIGHT");
 		xSemaphoreTake(wait, portMAX_DELAY);
 
 		if (is_done || proceed)
@@ -117,8 +98,10 @@ int thread_cut_handler(int arg)
 	vSemaphoreDelete(wait);
 	delete(btn);
 
-	if (proceed)
-		thread_cut(current_thread->name, current_thread->step, dir);
+	if (proceed) {
+		const menu_item *item = menu.get();
+		thread_cut(item->name.c_str(), item->step, dir);
+	}
 
 	return 0;
 }
