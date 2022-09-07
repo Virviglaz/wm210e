@@ -8,6 +8,9 @@
 #include "wifi.h"
 #include "ota.h"
 #include "esp_ota_ops.h"
+#include <vector>
+#include <string>
+#include <atomic>
 
 static void gpio_ota_workaround(void)
 {
@@ -46,58 +49,66 @@ static int start_fw_update(int arg)
 	return 0;
 }
 
-static const struct menu {
-	const char *first_row;
-	const char *second_row;
+struct menu_item
+{
+	std::string first_row;
+	std::string second_row;
 	int (*handler)(int arg);
 	const int arg;
-	const struct menu *next;
-	const struct menu *prev;
-} menu[] = {
-	[0] = {
-		.first_row = "METRIC THREAD",
-		.second_row = "RIGHT",
-		.handler = thread_cut_handler,
-		.arg = 1,
-		.next = &menu[1],
-		.prev = &menu[4],
-	},
-	[1] = {
-		.first_row = "METRIC THREAD",
-		.second_row = "LEFT",
-		.handler = thread_cut_handler,
-		.arg = 0,
-		.next = &menu[2],
-		.prev = &menu[0],
-	},
-	[2] = {
-		.first_row = "SMOOTH GO",
-		.second_row = "RIGHT",
-		.handler = smooth_go_handler,
-		.arg = 0,
-		.next = &menu[3],
-		.prev = &menu[1],
-	},
-	[3] = {
-		.first_row = "SMOOTH GO",
-		.second_row = "LEFT",
-		.handler = smooth_go_handler,
-		.arg = 1,
-		.next = &menu[4],
-		.prev = &menu[2],
-	},
-	[4] = {
-		.first_row = "START",
-		.second_row = "FW UPDATE",
-		.handler = start_fw_update,
-		.arg = 0,
-		.next = &menu[0],
-		.prev = &menu[3],
-	}
 };
 
-static struct menu *current_menu = (struct menu *)&menu[0];
+class Menu
+{
+public:
+	void next() {
+		i++;
+		if (i == list.size())
+			i = 0;
+	}
+
+	void prev() {
+		if (i)
+			i--;
+		else
+			i = list.size() - 1;
+	}
+
+	const menu_item *get() {
+		return &list.at(i);
+	}
+private:
+	std::atomic<int> i { 0 };
+	std::vector<menu_item> list = { {
+			.first_row = "METRIC THREAD",
+			.second_row = "RIGHT",
+			.handler = thread_cut_handler,
+			.arg = 1,
+		}, {
+			.first_row = "METRIC THREAD",
+			.second_row = "LEFT",
+			.handler = thread_cut_handler,
+			.arg = 0,
+		}, {
+			.first_row = "SMOOTH GO",
+			.second_row = "RIGHT",
+			.handler = smooth_go_handler,
+			.arg = 0,
+		}, {
+			.first_row = "SMOOTH GO",
+			.second_row = "LEFT",
+			.handler = smooth_go_handler,
+			.arg = 1,
+		}, {
+			.first_row = "START",
+			.second_row = "FW UPDATE",
+			.handler = start_fw_update,
+			.arg = 0,
+		} };
+
+};
+
 static SemaphoreHandle_t wait;
+static Menu menu;
 
 static void enc_btn_handler(void *arg)
 {
@@ -109,9 +120,9 @@ static void enc_btn_handler(void *arg)
 static void enc_rol_handler(void *arg)
 {
 	if (gpio_get_level(ENC_B))
-		current_menu = (struct menu *)current_menu->next;
+		menu.next();
 	else
-		current_menu = (struct menu *)current_menu->prev;
+		menu.prev();
 
 	xSemaphoreGive(wait);
 }
@@ -128,9 +139,10 @@ void menu_start(void)
 	btn->add(ENC_B, enc_rol_dummy);
 
 	while (1) {
+		const menu_item *item = menu.get();
 		LCD->clear();
-		LCD->print(FIRST_ROW, CENTER, "%s", current_menu->first_row);
-		LCD->print(SECOND_ROW, CENTER, "%s", current_menu->second_row);
+		LCD->print(FIRST_ROW, CENTER, "%s", item->first_row.c_str());
+		LCD->print(SECOND_ROW, CENTER, "%s", item->second_row.c_str());
 		xSemaphoreTake(wait, portMAX_DELAY);
 		if (proceed)
 			break;
@@ -139,5 +151,6 @@ void menu_start(void)
 	vSemaphoreDelete(wait);
 	delete(btn);
 
-	current_menu->handler(current_menu->arg);
+	const menu_item *item = menu.get();
+	item->handler(item->arg);
 }

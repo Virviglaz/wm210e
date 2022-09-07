@@ -3,6 +3,7 @@
 
 #include <HD44780.h>
 #include <stdint.h>
+#include <string>
 #include "platform.h"
 
 #include "freertos/FreeRTOS.h"
@@ -25,8 +26,20 @@ public:
 	lcd();
 	~lcd();
 	void print(const char *format, ...);
+	void print(std::string format, ...) {
+		print(format.c_str());
+	}
+
 	void print(enum row_e row, enum align a, const char *format, ...);
+	void print(enum row_e row, enum align a, std::string format, ...) {
+		print(row, a, format.c_str());
+	}
+
 	void print(enum row_e row, uint8_t col, const char *format, ...);
+	void print(enum row_e row, uint8_t col, std::string format, ...) {
+		print(row, col, format.c_str());
+	}
+
 	void clear();
 	void clear(enum row_e row);
 private:
