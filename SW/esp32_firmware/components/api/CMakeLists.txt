@@ -1,6 +1,5 @@
 idf_component_register(SRCS
 "src/lcd.cpp"
-"src/esp_encoder.cpp"
 "src/esp_stepper.cpp"
 "src/esp_buttons.cpp"
 "src/wifi.c"
