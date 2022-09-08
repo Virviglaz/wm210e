@@ -4,27 +4,26 @@
 #include "esp_buttons.h"
 #include "motor_ctrl.h"
 #include "smooth_go.h"
+#include "menu.h"
 
-static const struct cut {
+struct menu_item {
 	const char *name;
 	const uint32_t step;
 	const struct cut *next;
-} cuts[] = { {
-		.name = "FINE",
-		.step = 1000,
-		.next = &cuts[1],
-	}, {
-		.name = "MEDIUM",
-		.step = 600,
-		.next = &cuts[2],
-	}, {
-		.name = "COARSE",
-		.step = 100,
-		.next = &cuts[0],
-	},
 };
 
-static struct cut *current_cut = (struct cut *)&cuts[0];
+static const std::vector<menu_item> list { {
+	.name = "FINE",
+	.step = 1000,
+}, {
+	.name = "MEDIUM",
+	.step = 600,
+}, {
+	.name = "COARSE",
+	.step = 100,
+} };
+
+static Menu<menu_item> menu(list);
 static SemaphoreHandle_t wait;
 
 static void enc_btn_handler(void *arg)
@@ -36,7 +35,7 @@ static void enc_btn_handler(void *arg)
 
 static void enc_rol_handler(void *arg)
 {
-	current_cut = (struct cut *)current_cut->next;
+	menu.next();
 	xSemaphoreGive(wait);
 }
 
@@ -59,9 +58,10 @@ int smooth_go_handler(int arg)
 	btn->add(BTN1, btn1_handler, NEGEDGE, &is_done);
 
 	while (1) {
+		const menu_item *item = menu.get();
 		LCD->clear();
 		LCD->print(FIRST_ROW, CENTER, "%s %s",
-			current_cut->name, arg ? "LEFT" : "RIGHT");
+			item->name, arg ? "LEFT" : "RIGHT");
 		xSemaphoreTake(wait, portMAX_DELAY);
 
 		if (is_done || proceed)
@@ -71,8 +71,10 @@ int smooth_go_handler(int arg)
 	vSemaphoreDelete(wait);
 	delete(btn);
 
-	if (proceed)
-		thread_cut(current_cut->name, current_cut->step, dir);
+	if (proceed) {
+		const menu_item *item = menu.get();
+		thread_cut(item->name, item->step, dir);
+	}
 
 	return 0;
 }
