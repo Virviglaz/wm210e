@@ -10,6 +10,8 @@
 #include "esp_timer.h"
 #include "hal/gpio_ll.h"
 
+#include <atomic>
+
 /* Hardware timer clock divider */
 #define TIMER_DIVIDER		(16)
 /* convert counter value to seconds */
@@ -128,13 +130,22 @@ public:
 	{
 		return rotations;
 	}
+
+	int32_t get_position_deg()
+	{
+		return (position_deg / rotation_mult) % 360;
+	}
+
 	uint32_t err_cnt = 0;
 private:
 	uint32_t ratio;
-	uint32_t cnt = 0;
-	uint32_t rotations = 0;
+	const int32_t rotation_mult = 1000;
+	std::atomic<uint32_t> cnt { 0 };
+	std::atomic<uint32_t> rotations { 0 };
+	std::atomic<int32_t> position_deg { 0 };
 	bool dir_invert = false;
 	enum prev_p { ENC_P_A, ENC_P_B } prev_p = ENC_P_A;
+	enum dir { FRONT, REVERS } direction;
 	delayed_action *pull_down_clk;
 
 	static void pull_down_clk_handler()
@@ -144,7 +155,16 @@ private:
 
 	static void motor_step(stepper_ctrl *s)
 	{
+		/**
+		 * @brief Calcluation
+		 *
+		 * (m) 60T->27T (60:27), 20T->40T (2:1), 800ppm * 4 (2x2 isr)
+		 */
+		const int32_t step_deg = s->rotation_mult * (27 * 360) / (2 * 800 * 4 * 60);
 		s->cnt++;
+		s->position_deg +=
+			s->direction == dir::FRONT ? step_deg : - step_deg;
+
 		if (s->cnt == s->ratio) {
 			s->cnt = 0;
 			if (GPIO_GET(STP_CLK_PIN))
@@ -165,10 +185,13 @@ private:
 		s->prev_p = ENC_P_A;
 
 		if (GPIO_GET(EXT_ENC_A)) {
-			if (GPIO_GET(EXT_ENC_B))
+			if (GPIO_GET(EXT_ENC_B)) {
 				GPIO_SET(STP_DIR_PIN, s->dir_invert);
-			else
+				s->direction = dir::FRONT;
+			} else {
 				GPIO_SET(STP_DIR_PIN, !s->dir_invert);
+				s->direction = dir::REVERS;
+			}
 		}
 
 		motor_step(s);
@@ -190,6 +213,7 @@ private:
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
 
 		s->rotations++;
+		//s->position_deg = 0;
 	}
 };
 
@@ -213,8 +237,8 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 	while (1) {
 		if (xSemaphoreTake(wait, pdMS_TO_TICKS(1000)) == pdTRUE)
 			break;
-		LCD->print(FIRST_ROW, CENTER, "ERRORS: %u   ",
-			stepper_thread_cut->err_cnt);
+		LCD->print(FIRST_ROW, CENTER, "POS: %d   ",
+			stepper_thread_cut->get_position_deg());
 		LCD->print(SECOND_ROW, CENTER, "ROTATIONS: %u   ",
 			stepper_thread_cut->get_rotations_counter());
 	}

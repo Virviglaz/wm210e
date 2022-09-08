@@ -9,7 +9,6 @@
 struct menu_item {
 	const char *name;
 	const uint32_t step;
-	const struct cut *next;
 };
 
 static const std::vector<menu_item> list { {
