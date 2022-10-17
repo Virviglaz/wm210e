@@ -77,14 +77,14 @@ public:
 	{
 		ESP_ERROR_CHECK(gpio_reset_pin(EXT_ENC_A));
 		ESP_ERROR_CHECK(gpio_reset_pin(EXT_ENC_B));
-		ESP_ERROR_CHECK(gpio_reset_pin(EXT_ENC_Z));
+		//ESP_ERROR_CHECK(gpio_reset_pin(EXT_ENC_Z));
 		ESP_ERROR_CHECK(gpio_reset_pin(STP_CLK_PIN));
 		ESP_ERROR_CHECK(gpio_reset_pin(STP_DIR_PIN));
 		ESP_ERROR_CHECK(gpio_reset_pin(STP_ENA_PIN));
 	
 		ESP_ERROR_CHECK(gpio_set_direction(EXT_ENC_A, GPIO_MODE_INPUT));
 		ESP_ERROR_CHECK(gpio_set_direction(EXT_ENC_B, GPIO_MODE_INPUT));
-		ESP_ERROR_CHECK(gpio_set_direction(EXT_ENC_Z, GPIO_MODE_INPUT));
+		//ESP_ERROR_CHECK(gpio_set_direction(EXT_ENC_Z, GPIO_MODE_INPUT));
 
 		ESP_ERROR_CHECK(gpio_set_direction(STP_CLK_PIN, GPIO_MODE_OUTPUT));
 		ESP_ERROR_CHECK(gpio_set_direction(STP_DIR_PIN, GPIO_MODE_OUTPUT));
@@ -92,15 +92,15 @@ public:
 
 		ESP_ERROR_CHECK(gpio_set_intr_type(EXT_ENC_A, GPIO_INTR_ANYEDGE));
 		ESP_ERROR_CHECK(gpio_set_intr_type(EXT_ENC_B, GPIO_INTR_ANYEDGE));
-		ESP_ERROR_CHECK(gpio_set_intr_type(EXT_ENC_Z, GPIO_INTR_ANYEDGE));
+		//ESP_ERROR_CHECK(gpio_set_intr_type(EXT_ENC_Z, GPIO_INTR_ANYEDGE));
 
 		ESP_ERROR_CHECK(gpio_install_isr_service(0));
 		ESP_ERROR_CHECK(gpio_isr_handler_add(
 			EXT_ENC_A, stepper_ctrl::isr_a, this));
 		ESP_ERROR_CHECK(gpio_isr_handler_add(
 			EXT_ENC_B, stepper_ctrl::isr_b, this));
-		ESP_ERROR_CHECK(gpio_isr_handler_add(
-			EXT_ENC_Z, stepper_ctrl::isr_z, this));
+		//ESP_ERROR_CHECK(gpio_isr_handler_add(
+			//EXT_ENC_Z, stepper_ctrl::isr_z, this));
 
 		ESP_ERROR_CHECK(gpio_set_level(STP_DIR_PIN, 0));
 		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, 1));
@@ -114,10 +114,10 @@ public:
 	{
 		gpio_isr_handler_remove(EXT_ENC_A);
 		gpio_isr_handler_remove(EXT_ENC_B);
-		gpio_isr_handler_remove(EXT_ENC_Z);
+		//gpio_isr_handler_remove(EXT_ENC_Z);
 		gpio_reset_pin(EXT_ENC_A);
 		gpio_reset_pin(EXT_ENC_B);
-		gpio_reset_pin(EXT_ENC_Z);
+		//gpio_reset_pin(EXT_ENC_Z);
 		gpio_uninstall_isr_service();
 		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, 0));
 
@@ -213,7 +213,6 @@ private:
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
 
 		s->rotations++;
-		//s->position_deg = 0;
 	}
 };
 
