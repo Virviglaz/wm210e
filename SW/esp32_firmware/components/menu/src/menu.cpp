@@ -4,7 +4,7 @@
 #include "hardware.h"
 #include "esp_buttons.h"
 #include "thread_cut.h"
-#include "smooth_go.h"
+#include "cutting.h"
 #include "wifi.h"
 #include "ota.h"
 #include "esp_ota_ops.h"
@@ -49,8 +49,8 @@ static int start_fw_update(int arg)
 
 struct menu_item
 {
-	std::string first_row;
-	std::string second_row;
+	const std::string first_row;
+	const std::string second_row;
 	int (*handler)(int arg);
 	const int arg;
 };
@@ -66,12 +66,12 @@ static const std::vector<menu_item> list = { {
 	.handler = thread_cut_handler,
 	.arg = 0,
 }, {
-	.first_row = "SMOOTH GO",
+	.first_row = "CUT",
 	.second_row = "RIGHT",
 	.handler = smooth_go_handler,
 	.arg = 0,
 }, {
-	.first_row = "SMOOTH GO",
+	.first_row = "CUT",
 	.second_row = "LEFT",
 	.handler = smooth_go_handler,
 	.arg = 1,

@@ -3,7 +3,7 @@
 #include "lcd.h"
 #include "esp_buttons.h"
 #include "motor_ctrl.h"
-#include "smooth_go.h"
+#include "cutting.h"
 #include "menu.h"
 
 struct menu_item {
@@ -12,14 +12,14 @@ struct menu_item {
 };
 
 static const std::vector<menu_item> list { {
-	.name = "FINE",
-	.step = 1000,
+	.name = "0.05 mm/r",
+	.step = 800,
 }, {
-	.name = "MEDIUM",
-	.step = 600,
+	.name = "0.10 mm/r",
+	.step = 400,
 }, {
-	.name = "COARSE",
-	.step = 100,
+	.name = "0.25 mm/r",
+	.step = 160,
 } };
 
 static Menu<menu_item> menu(list);
