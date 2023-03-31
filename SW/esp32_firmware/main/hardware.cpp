@@ -1,5 +1,6 @@
 #include "hardware.h"
 #include "lcd.h"
+#include "driver/gpio.h"
 
 int hardware_init(const char *version)
 {

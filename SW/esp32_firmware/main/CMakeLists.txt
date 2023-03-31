@@ -1,9 +1,16 @@
 idf_component_register(SRCS
-"main.cpp"
-"hardware.cpp"
-
+	"main.cpp"
+	"hardware.cpp"
+REQUIRES
+	driver
+PRIV_REQUIRES
+	include
+	ota
+	app_update
+	drivers
 INCLUDE_DIRS
-""
-"../components/api/inc"
-"../components/menu/inc"
+	""
+	"../components/api/inc"
+	"../components/menu/inc"
+	"../include"
 )

@@ -1,19 +1,22 @@
 idf_component_register(SRCS
-"src/menu.cpp"
-"src/thread_cut.cpp"
-"src/motor_ctrl.cpp"
-"src/cutting.cpp"
+	"src/menu.cpp"
+	"src/thread_cut.cpp"
+	"src/motor_ctrl.cpp"
+	"src/cutting.cpp"
 
 INCLUDE_DIRS
-"../../include"
-"../drivers/inc"
-"../api/inc"
-"inc"
-
+	"inc"
+	"../../include"
+REQUIRES
+	driver
 PRIV_REQUIRES
-drivers
-api
-app_update
+	include
+	drivers
+	api
+	app_update
+	ota
+	wifi
+	esp_timer
 )
 
 add_compile_definitions(

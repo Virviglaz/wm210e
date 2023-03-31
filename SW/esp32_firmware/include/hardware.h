@@ -2,6 +2,7 @@
 #define __HARDWARE_H__
 
 #include <stdint.h>
+#include "driver/gpio.h"
 
 /* lcd */
 #define LCD_I2C_SDA			GPIO_NUM_12

@@ -1,6 +1,9 @@
 #include "lcd.h"
-#include "HD44780.h"
-#include "esp32_i2c.h"
+#include <HD44780.h>
+#include <esp32_i2c.h>
+#include <free_rtos_h.h>
+#include <string.h>
+#include <log.h>
 #include "hardware.h"
 
 #define LCD_I2C_ADDR			0x27
@@ -25,7 +28,7 @@ static void write(uint8_t data)
 
 void delay_func(uint16_t us)
 {
-	delay_us(us);
+	delay_ms(us / 1000 + 1);
 }
 
 static struct hd44780_conn conn;

@@ -1,14 +1,9 @@
 #ifndef __LCD_H__
 #define __LCD_H__
 
-#include <HD44780.h>
+#include <free_rtos_h.h>
 #include <stdint.h>
 #include <string>
-#include "platform.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
 
 enum row_e {
 	FIRST_ROW,

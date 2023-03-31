@@ -1,10 +1,11 @@
-#include "platform.h"
-#include "hardware.h"
+#include <free_rtos_h.h>
 #include "lcd.h"
 #include "esp_buttons.h"
-#include "motor_ctrl.h"
+#include "hardware.h"
 #include "cutting.h"
-#include "menu.h"
+#include "cpp_menu.h"
+#include <vector>
+#include "motor_ctrl.h"
 
 struct menu_item {
 	const char *name;

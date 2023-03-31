@@ -1,14 +1,15 @@
 #include "menu.h"
 #include "lcd.h"
-#include "platform.h"
+#include <free_rtos_h.h>
 #include "hardware.h"
 #include "esp_buttons.h"
 #include "thread_cut.h"
 #include "cutting.h"
-#include "wifi.h"
-#include "ota.h"
+#include <wifi.h>
+#include <ota.h>
+#include <log.h>
 #include "esp_ota_ops.h"
-#include "menu.h"
+#include "cpp_menu.h"
 
 static void gpio_ota_workaround(void)
 {
@@ -32,10 +33,10 @@ static ota_t ota = {
 
 static int start_fw_update(int arg)
 {
-	const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+	const esp_app_desc_t *app_desc = esp_app_get_description();
 	ota.version = app_desc->version;
 
-	wifi_init("Tower", "555666777", "WM210E");
+	wifi_init("Tower", "555666777");
 	ota_start(&ota);
 
 	INFO("Firmware version: %s", ota.version);

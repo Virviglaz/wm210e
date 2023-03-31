@@ -1,5 +1,5 @@
-#ifndef __MENU_H__
-#define __MENU_H__
+#ifndef __CPP_MENU_H__
+#define __CPP_MENU_H__
 
 #include <string>
 #include <vector>
@@ -32,4 +32,4 @@ private:
 	const std::vector<T>& list;
 };
 
-#endif /* __MENU_H__ */
+#endif /* __CPP_MENU_H__ */

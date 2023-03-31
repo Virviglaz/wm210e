@@ -1,10 +1,12 @@
-#include "platform.h"
 #include "hardware.h"
 #include "lcd.h"
 #include "esp_buttons.h"
 #include "motor_ctrl.h"
 #include "thread_cut.h"
-#include "menu.h"
+#include "driver/gpio.h"
+#include "cpp_menu.h"
+#include <free_rtos_h.h>
+#include <vector>
 
 struct menu_item {
 	std::string name;
