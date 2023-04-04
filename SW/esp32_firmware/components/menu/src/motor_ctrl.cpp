@@ -90,7 +90,8 @@ public:
 
 		fan_start();
 
-		pull_down_clk = new delayed_action(500, pull_down_clk_handler);
+		pull_down_clk = new delayed_action(MOTOR_CLK_PULSE_US,
+			pull_down_clk_handler);
 	}
 
 	~stepper_ctrl()

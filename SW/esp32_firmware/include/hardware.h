@@ -5,8 +5,8 @@
 #include "driver/gpio.h"
 
 /* lcd */
-#define LCD_I2C_SDA			GPIO_NUM_12
-#define LCD_I2C_SCL			GPIO_NUM_14
+#define LCD_I2C_SDA			12
+#define LCD_I2C_SCL			14
 
 /* buttons */
 #define BTN1				GPIO_NUM_16
@@ -30,6 +30,9 @@
 
 /* Fan */
 #define FAN_ENA_PIN			GPIO_NUM_15
+
+/* Timings */
+#define MOTOR_CLK_PULSE_US		50
 
 int hardware_init(const char *version);
 void fan_start();

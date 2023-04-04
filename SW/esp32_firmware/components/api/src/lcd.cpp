@@ -1,10 +1,10 @@
-#include "lcd.h"
 #include <HD44780.h>
-#include <esp32_i2c.h>
 #include <free_rtos_h.h>
 #include <string.h>
 #include <log.h>
+#include <esp_timer.h>
 #include "hardware.h"
+#include "lcd.h"
 
 #define LCD_I2C_ADDR			0x27
 #define LCD_TASK_SIZE			0x1000
@@ -18,17 +18,20 @@ typedef struct {
 	char text[MAX_MESSAGE_SIZE];
 } *msg_t;
 
-static i2c *i2c_bus;
+static i2c<> i2c_bus;
 lcd *LCD;
 
 static void write(uint8_t data)
 {
-	i2c_bus->write_reg(LCD_I2C_ADDR, data, 0, 0);
+	i2c_bus.write_reg(LCD_I2C_ADDR, data, 0, 0);
 }
 
 void delay_func(uint16_t us)
 {
-	delay_ms(us / 1000 + 1);
+	uint32_t v = esp_timer_get_time() + us;
+
+	while (esp_timer_get_time() < v)
+		taskYIELD();
 }
 
 static struct hd44780_conn conn;
@@ -45,7 +48,7 @@ static struct hd44780_lcd hd44780 = {
 
 lcd::lcd()
 {
-	i2c_bus = new i2c(LCD_I2C_SDA, LCD_I2C_SCL);
+	i2c_bus.init(LCD_I2C_SDA, LCD_I2C_SCL);
 	queue = xQueueCreate(LCD_QUEUE_SIZE, sizeof(msg_t));
 	xTaskCreate(lcd::handler, "lcd", LCD_TASK_SIZE, this, 1, &handle);
 }
@@ -54,7 +57,6 @@ lcd::~lcd()
 {
 	vTaskDelete(handle);
 	vQueueDelete(queue);
-	delete(i2c_bus);
 }
 
 static msg_t prepare(char *dest, const char *format, va_list arg)

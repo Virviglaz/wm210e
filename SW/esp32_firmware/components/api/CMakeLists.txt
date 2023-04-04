@@ -11,4 +11,5 @@ PRIV_REQUIRES
 	app_update
 	include
 	drivers
+	esp_timer
 )

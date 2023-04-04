@@ -2,6 +2,7 @@
 #define __LCD_H__
 
 #include <free_rtos_h.h>
+#include <esp32_i2c.h>
 #include <stdint.h>
 #include <string>
 
