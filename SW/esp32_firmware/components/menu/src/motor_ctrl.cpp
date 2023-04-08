@@ -1,9 +1,10 @@
 #include "motor_ctrl.h"
-#include <free_rtos_h.h>
 #include "hardware.h"
 #include "lcd.h"
-#include "esp_buttons.h"
 #include "log.h"
+#include <free_rtos_h.h>
+#include <esp32_timer.h>
+#include <esp_buttons.h>
 
 /* ESP32 drivers */
 #include "driver/gpio.h"
@@ -18,44 +19,6 @@
 #define TIMER_SCALE		(TIMER_BASE_CLK / (TIMER_DIVIDER * 1000000UL))
 #define GPIO_SET(pin, state)	gpio_ll_set_level(&GPIO, pin, state)
 #define GPIO_GET(pin)		gpio_ll_get_level(&GPIO, pin)
-
-class delayed_action
-{
-public:
-	delayed_action(uint32_t timeout_us, void (*action)(void))
-	{
-		const esp_timer_create_args_t config = {
-			.callback = callback,
-			.arg = this,
-			.dispatch_method = ESP_TIMER_ISR,
-			.name = __func__,
-			.skip_unhandled_events = true,
-		};
-		ESP_ERROR_CHECK(esp_timer_create(&config, &handle));
-		_action = action;
-		_timeout_us = timeout_us;
-	}
-
-	~delayed_action()
-	{
-		ESP_ERROR_CHECK(esp_timer_delete(handle));
-	}
-
-	void IRAM_ATTR run()
-	{
-		esp_timer_start_once(handle, _timeout_us);
-	}
-
-private:
-	void (*_action)(void);
-	esp_timer_handle_t handle;
-	uint32_t _timeout_us;
-	static void IRAM_ATTR callback(void *args)
-	{
-		delayed_action *m = (delayed_action *)args;
-		m->_action();
-	}
-};
 
 class stepper_ctrl
 {
@@ -130,7 +93,7 @@ private:
 	enum dir { FRONT, REVERS } direction;
 	delayed_action *pull_down_clk;
 
-	static void pull_down_clk_handler()
+	static void pull_down_clk_handler(void *args)
 	{
 		GPIO_SET(STP_CLK_PIN, 0);
 	}
