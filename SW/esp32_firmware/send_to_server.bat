@@ -1,0 +1,1 @@
+pscp.exe -P 22 build/wm210e_esp32.bin pavel@192.168.0.108:/home/pavel/ota_test

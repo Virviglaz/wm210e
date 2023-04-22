@@ -20,19 +20,22 @@
 /* external encoder */
 #define EXT_ENC_A			GPIO_NUM_23
 #define EXT_ENC_B			GPIO_NUM_22
-#define EXT_ENC_Z			GPIO_NUM_21
+#define EXT_ENC_Z			21
 
 /* stepper */
 #define STP_CLK_PIN			GPIO_NUM_26
+#define STP_CLK_POL			1
 #define STP_DIR_PIN			GPIO_NUM_33
 #define STP_ENA_PIN			GPIO_NUM_25
 #define STP_DIR_CCW			1
+#define STP_ENA_POL			0
 
 /* Fan */
 #define FAN_ENA_PIN			GPIO_NUM_15
 
 /* Timings */
 #define MOTOR_CLK_PULSE_US		50
+#define SPEED_RATIO_CALC(x)		(200 * (x) / 11500)
 
 int hardware_init(const char *version);
 void fan_start();

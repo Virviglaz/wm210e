@@ -110,8 +110,8 @@ void menu_start(void)
 {
 	bool proceed = false;
 	wait = xSemaphoreCreateBinary();
-	buttons *btn = new buttons(10);
-	btn->add(ENC_BTN, enc_btn_handler, NEGEDGE, &proceed);
+	Buttons *btn = new Buttons(10);
+	btn->add(ENC_BTN, enc_btn_handler, Buttons::NEGEDGE, &proceed);
 	btn->add(ENC_A, enc_rol_handler);
 	btn->add(ENC_B, enc_rol_dummy);
 

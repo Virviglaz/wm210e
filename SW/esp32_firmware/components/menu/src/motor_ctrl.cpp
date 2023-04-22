@@ -42,14 +42,14 @@ public:
 		ESP_ERROR_CHECK(gpio_set_intr_type(EXT_ENC_A, GPIO_INTR_ANYEDGE));
 		ESP_ERROR_CHECK(gpio_set_intr_type(EXT_ENC_B, GPIO_INTR_ANYEDGE));
 
-		ESP_ERROR_CHECK(gpio_install_isr_service(0));
+		gpio_install_isr_service(0);
 		ESP_ERROR_CHECK(gpio_isr_handler_add(
 			EXT_ENC_A, stepper_ctrl::isr_a, this));
 		ESP_ERROR_CHECK(gpio_isr_handler_add(
 			EXT_ENC_B, stepper_ctrl::isr_b, this));
 
 		ESP_ERROR_CHECK(gpio_set_level(STP_DIR_PIN, 0));
-		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, 1));
+		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, STP_ENA_POL));
 
 		fan_start();
 
@@ -63,8 +63,7 @@ public:
 		gpio_isr_handler_remove(EXT_ENC_B);
 		gpio_reset_pin(EXT_ENC_A);
 		gpio_reset_pin(EXT_ENC_B);
-		gpio_uninstall_isr_service();
-		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, 0));
+		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, !STP_ENA_POL));
 
 		fan_stop();
 
@@ -95,7 +94,7 @@ private:
 
 	static void pull_down_clk_handler(void *args)
 	{
-		GPIO_SET(STP_CLK_PIN, 0);
+		GPIO_SET(STP_CLK_PIN, !STP_CLK_POL);
 	}
 
 	static void motor_step(stepper_ctrl *s)
@@ -105,7 +104,6 @@ private:
 		 *
 		 * (m) 60T->27T (60:27), 20T->40T (2:1), 800ppm * 4 (2x2 isr)
 		 * Encoder gives 2x2x800 = 3200 isrs/rev
-		 * 
 		 */
 		const int32_t step_deg =
 			s->rotation_mult / 2 * 27 * 3200 / 60 / 360;
@@ -129,7 +127,7 @@ private:
 			s->cnt = 0;
 			if (GPIO_GET(STP_CLK_PIN))
 				s->err_cnt++;
-			GPIO_SET(STP_CLK_PIN, 1);
+			GPIO_SET(STP_CLK_PIN, STP_CLK_POL);
 
 			delayed_action *d = s->pull_down_clk;
 			d->run();
@@ -177,9 +175,10 @@ static void btn1_handler(void *arg)
 void thread_cut(const char *name, uint32_t step, bool dir)
 {
 	SemaphoreHandle_t wait = xSemaphoreCreateBinary();
-	buttons *btn = new buttons();
+	Buttons *btn = new Buttons();
+	freq_meter meter(EXT_ENC_Z, false);
 
-	btn->add(BTN1, btn1_handler, NEGEDGE, (void *)wait);
+	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, (void *)wait);
 
 	LCD->clear();
 	LCD->print(FIRST_ROW, CENTER, "%s", name);
@@ -187,11 +186,12 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 	stepper_ctrl *stepper_thread_cut = new stepper_ctrl(step, dir);
 
 	while (1) {
-		if (xSemaphoreTake(wait, pdMS_TO_TICKS(250)) == pdTRUE)
+		if (xSemaphoreTake(wait, pdMS_TO_TICKS(1000)) == pdTRUE)
 			break;
-		LCD->print(FIRST_ROW, CENTER, "DEG: %d   ",
-			stepper_thread_cut->get_position_deg());
-		LCD->print(SECOND_ROW, CENTER, "ROTATIONS: %u   ",
+		uint32_t freq =
+			SPEED_RATIO_CALC(meter.get_frequency<uint32_t>());
+		LCD->print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
+		LCD->print(SECOND_ROW, LEFT, "ROT: %u   ",
 			stepper_thread_cut->get_rotations_counter());
 	}
 

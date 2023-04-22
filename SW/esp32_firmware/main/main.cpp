@@ -23,7 +23,7 @@ static void ota_confirm(void *args)
 
 void enc_test()
 {
-	encoder enc(ENC_A, ENC_B);
+	Encoder<uint32_t> enc(ENC_A, ENC_B);
 	while (1) {
 		delay_ms(300);
 		LCD->clear();

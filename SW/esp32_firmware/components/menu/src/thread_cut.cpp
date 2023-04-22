@@ -80,11 +80,11 @@ int thread_cut_handler(int arg)
 	bool proceed = false;
 	bool dir = arg == 0;
 	wait = xSemaphoreCreateBinary();
-	buttons *btn = new buttons(10);
-	btn->add(ENC_BTN, enc_btn_handler, NEGEDGE, &proceed);
+	Buttons *btn = new Buttons(10);
+	btn->add(ENC_BTN, enc_btn_handler, Buttons::NEGEDGE, &proceed);
 	btn->add(ENC_A, enc_rol_handler);
 	btn->add(ENC_B, enc_rol_dummy);
-	btn->add(BTN1, btn1_handler, NEGEDGE, &is_done);
+	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, &is_done);
 
 	while (1) {
 		const menu_item *item = menu.get();

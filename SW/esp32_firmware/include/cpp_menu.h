@@ -27,6 +27,7 @@ public:
 	const T *get() {
 		return &list.at(i);
 	}
+
 private:
 	std::atomic<int> i { 0 };
 	const std::vector<T>& list;
