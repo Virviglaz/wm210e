@@ -67,12 +67,12 @@ static const std::vector<menu_item> list = { {
 	.handler = thread_cut_handler,
 	.arg = 0,
 }, {
-	.first_row = "CUT",
+	.first_row = "FEED",
 	.second_row = "RIGHT",
 	.handler = smooth_go_handler,
 	.arg = 0,
 }, {
-	.first_row = "CUT",
+	.first_row = "FEED",
 	.second_row = "LEFT",
 	.handler = smooth_go_handler,
 	.arg = 1,

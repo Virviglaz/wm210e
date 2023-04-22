@@ -15,34 +15,34 @@ struct menu_item {
 
 static const std::vector<menu_item> list { {
 	.name = "M2x0.4",
-	.step = 100,
-}, {
-	.name = "M3x0.5",
-	.step = 80,
-}, {
-	.name = "M4x0.7",
-	.step = 57,
-}, {
-	.name = "M5x0.8",
 	.step = 50,
 }, {
-	.name = "M6x1.0",
+	.name = "M3x0.5",
 	.step = 40,
 }, {
+	.name = "M4x0.7",
+	.step = 57 / 2,
+}, {
+	.name = "M5x0.8",
+	.step = 25,
+}, {
+	.name = "M6x1.0",
+	.step = 20,
+}, {
 	.name = "M8x1.25",
-	.step = 32,
+	.step = 16,
 }, {
 	.name = "M10x1.5",
-	.step = 27,
+	.step = 27 / 2,
 }, {
 	.name = "M12x1.75",
-	.step = 23,
+	.step = 23 / 2,
 }, {
 	.name = "M14x2.0",
-	.step = 20,
+	.step = 10,
 }, {
 	.name = "M16x2.0",
-	.step = 20,
+	.step = 10,
 } };
 
 static Menu<menu_item> menu(list);
