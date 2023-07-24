@@ -62,9 +62,9 @@ int smooth_go_handler(int arg)
 
 	while (1) {
 		const menu_item *item = menu.get();
-		LCD->clear();
-		LCD->print(FIRST_ROW, CENTER, "%s %s",
-			item->name, arg ? "LEFT" : "RIGHT");
+		//LCD->clear();
+		//LCD->print(FIRST_ROW, CENTER, "%s %s",
+			//item->name, arg ? "LEFT" : "RIGHT");
 		xSemaphoreTake(wait, portMAX_DELAY);
 
 		if (is_done || proceed)

@@ -19,7 +19,6 @@ typedef struct {
 } *msg_t;
 
 static i2c<> i2c_bus;
-lcd *LCD;
 
 static void write(uint8_t data)
 {

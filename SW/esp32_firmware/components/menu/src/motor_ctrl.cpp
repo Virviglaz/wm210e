@@ -180,8 +180,8 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 
 	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, (void *)wait);
 
-	LCD->clear();
-	LCD->print(FIRST_ROW, CENTER, "%s", name);
+	//LCD->clear();
+	//LCD->print(FIRST_ROW, CENTER, "%s", name);
 
 	stepper_ctrl *stepper_thread_cut = new stepper_ctrl(step, dir);
 
@@ -190,9 +190,9 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 			break;
 		uint32_t freq =
 			SPEED_RATIO_CALC(meter.get_frequency<uint32_t>());
-		LCD->print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
-		LCD->print(SECOND_ROW, LEFT, "ROT: %u   ",
-			stepper_thread_cut->get_rotations_counter());
+		//LCD->print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
+		//LCD->print(SECOND_ROW, LEFT, "ROT: %u   ",
+			//stepper_thread_cut->get_rotations_counter());
 	}
 
 	vSemaphoreDelete(wait);

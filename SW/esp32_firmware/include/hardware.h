@@ -37,7 +37,7 @@
 #define MOTOR_CLK_PULSE_US		50
 #define SPEED_RATIO_CALC(x)		(200 * (x) / 11500)
 
-int hardware_init(const char *version);
+int hardware_init();
 void fan_start();
 void fan_stop();
 void motor_enable(bool state);

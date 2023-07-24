@@ -41,8 +41,8 @@ static int start_fw_update(int arg)
 
 	INFO("Firmware version: %s", ota.version);
 
-	LCD->clear();
-	LCD->print(FIRST_ROW, CENTER, "START FW UPDATE");
+	//LCD->clear();
+	//LCD->print(FIRST_ROW, CENTER, "START FW UPDATE");
 	delay_s(3);
 
 	return 0;
@@ -106,8 +106,48 @@ static void enc_rol_handler(void *arg)
 
 static void enc_rol_dummy(void *arg) {}
 
-void menu_start(void)
+typedef std::vector<MenuItem *> menu_t;
+static MenuItem manual_feed("MANUAL FEED");
+static MenuItem metric_thread("METRIC THREAD");
+static MenuItem top("E-GEAR LATHE", menu_t { &metric_thread, &manual_feed });
+
+
+void menu_start(const char *version)
 {
+	lcd lcd;
+	lcd.clear();
+	lcd.print(FIRST_ROW, CENTER, "VERSION");
+	lcd.print(SECOND_ROW, CENTER, "%s", version);
+	delay_s(3);
+	lcd.clear();
+
+	Buttons btns;
+	btns.add(ENC_BTN);
+	btns.add(BTN1);
+	btns.add(BTN2);
+
+	MenuItem *current = &top;
+
+	while (1) {
+		current->update_lcd(lcd);
+
+		switch (btns.wait_for_action())
+		{
+		case 0:
+			current = current->enter();
+			break;
+		case 1:
+			current->next();
+			break;
+		case 2:
+			current->prev();
+			break;
+		
+		default:
+			break;
+		}
+	}
+
 	bool proceed = false;
 	wait = xSemaphoreCreateBinary();
 	Buttons *btn = new Buttons(10);
@@ -116,10 +156,10 @@ void menu_start(void)
 	btn->add(ENC_B, enc_rol_dummy);
 
 	while (1) {
-		const menu_item *item = menu.get();
-		LCD->clear();
-		LCD->print(FIRST_ROW, CENTER, "%s", item->first_row.c_str());
-		LCD->print(SECOND_ROW, CENTER, "%s", item->second_row.c_str());
+		//const menu_item *item = menu.get();
+		//LCD->clear();
+		//LCD->print(FIRST_ROW, CENTER, "%s", item->first_row.c_str());
+		//LCD->print(SECOND_ROW, CENTER, "%s", item->second_row.c_str());
 		xSemaphoreTake(wait, portMAX_DELAY);
 		if (proceed)
 			break;

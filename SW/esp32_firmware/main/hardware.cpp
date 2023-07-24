@@ -1,17 +1,8 @@
 #include "hardware.h"
-#include "lcd.h"
 #include "driver/gpio.h"
 
-int hardware_init(const char *version)
+int hardware_init()
 {
-	/* create LCD */
-	LCD = new lcd();
-	LCD->clear();
-	LCD->print(FIRST_ROW, CENTER, "VERSION");
-	LCD->print(SECOND_ROW, CENTER, "%s", version);
-	delay_s(3);
-	LCD->clear();
-
 	ESP_ERROR_CHECK(gpio_reset_pin(FAN_ENA_PIN));
 	ESP_ERROR_CHECK(gpio_set_direction(FAN_ENA_PIN, GPIO_MODE_OUTPUT));
 	ESP_ERROR_CHECK(gpio_set_level(FAN_ENA_PIN, 0));

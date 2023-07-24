@@ -21,31 +21,18 @@ static void ota_confirm(void *args)
 	vTaskDelete(NULL);
 }
 
-void enc_test()
-{
-	Encoder<uint32_t> enc(ENC_A, ENC_B);
-	while (1) {
-		delay_ms(300);
-		LCD->clear();
-		LCD->print(FIRST_ROW, CENTER, "%d", enc.get_value());
-		//LCD->print(SECOND_ROW, CENTER, "%d", enc.get_noise_level());
-	}
-}
-
 void app_main(void)
 {
 	const esp_app_desc_t *app_desc = esp_app_get_description();
 
 	xTaskCreate(ota_confirm, NULL, 0x800, 0, 1, 0);
 
-	int res = hardware_init(app_desc->version);
+	int res = hardware_init();
 	if (res)
 		return;
 
-	//enc_test();
-
 	while (1)
-		menu_start();
+		menu_start(app_desc->version);
 
 	return;
 }

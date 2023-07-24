@@ -88,9 +88,9 @@ int thread_cut_handler(int arg)
 
 	while (1) {
 		const menu_item *item = menu.get();
-		LCD->clear();
-		LCD->print(FIRST_ROW, CENTER, "%s %s",
-			item->name.c_str(), arg ? "LEFT" : "RIGHT");
+		//LCD->clear();
+		//LCD->print(FIRST_ROW, CENTER, "%s %s",
+			//item->name.c_str(), arg ? "LEFT" : "RIGHT");
 		xSemaphoreTake(wait, portMAX_DELAY);
 
 		if (is_done || proceed)
