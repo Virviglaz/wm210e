@@ -31,7 +31,7 @@ static const std::vector<Thread_type> thread_list {
 class ThreadMenu : public MenuItem
 {
 	Child<Thread_type> list = thread_list;
-	Thread_type current = thread_list[0];
+	Thread_type current = list.get_first();
 	dir direction;
 public:
 	ThreadMenu() {}
@@ -60,5 +60,10 @@ public:
 		lcd.print(SECOND_ROW, CENTER, "%s", item.title);
 	}
 };
+
+/*class ThreadCut : public MenuItem
+{
+
+};*/
 
 #endif /* __THREAD_CUT_H__ */

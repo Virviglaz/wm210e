@@ -1,6 +1,5 @@
 #include "motor_ctrl.h"
 #include "hardware.h"
-#include "lcd.h"
 #include "log.h"
 #include <free_rtos_h.h>
 #include <esp32_timer.h>
@@ -172,7 +171,7 @@ static void btn1_handler(void *arg)
 	xSemaphoreGive((SemaphoreHandle_t)arg);
 }
 
-void thread_cut(const char *name, uint32_t step, bool dir)
+void thread_cut(lcd& lcd, const char *name, uint32_t step, bool dir)
 {
 	SemaphoreHandle_t wait = xSemaphoreCreateBinary();
 	Buttons *btn = new Buttons();
@@ -180,8 +179,8 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 
 	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, (void *)wait);
 
-	//LCD->clear();
-	//LCD->print(FIRST_ROW, CENTER, "%s", name);
+	lcd.clear();
+	lcd.print(FIRST_ROW, CENTER, "%s", name);
 
 	stepper_ctrl *stepper_thread_cut = new stepper_ctrl(step, dir);
 
@@ -190,9 +189,9 @@ void thread_cut(const char *name, uint32_t step, bool dir)
 			break;
 		uint32_t freq =
 			SPEED_RATIO_CALC(meter.get_frequency<uint32_t>());
-		//LCD->print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
-		//LCD->print(SECOND_ROW, LEFT, "ROT: %u   ",
-			//stepper_thread_cut->get_rotations_counter());
+		lcd.print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
+		lcd.print(SECOND_ROW, LEFT, "ROT: %u   ",
+			stepper_thread_cut->get_rotations_counter());
 	}
 
 	vSemaphoreDelete(wait);

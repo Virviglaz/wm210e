@@ -32,7 +32,7 @@ static ota_t ota = {
 	.gpio_ota_cancel_workaround = 0,
 };
 
-static int start_fw_update(int arg)
+static int start_fw_update()
 {
 	const esp_app_desc_t *app_desc = esp_app_get_description();
 	ota.version = app_desc->version;
@@ -54,9 +54,17 @@ typedef std::vector<MenuItem *> menu_t;
 static ThreadMenu right_thread("RIGHT", CW);
 static ThreadMenu left_thread("LEFT", CCW);
 
-static MenuItem manual_feed("MANUAL FEED");
-static MenuItem metric_thread("METRIC THREAD", menu_t { &right_thread, &left_thread });
-static MenuItem top("E-GEAR LATHE", menu_t { &metric_thread, &manual_feed });
+//static MenuItem manual_feed("MANUAL FEED");
+static MenuItem metric_thread("METRIC THREAD", menu_t {
+	&right_thread,
+	&left_thread
+});
+static MenuExe fw_update("RUN FW UPDATE", start_fw_update);
+static MenuItem top("E-GEAR LATHE", menu_t {
+	&metric_thread,
+	//&manual_feed,
+	&fw_update
+});
 
 
 void menu_start(const char *version)
@@ -87,6 +95,9 @@ void menu_start(const char *version)
 			current->next();
 			break;
 		case 2:
+			current = current->back();
+			break;
+		case 3:
 			current->prev();
 			break;
 		

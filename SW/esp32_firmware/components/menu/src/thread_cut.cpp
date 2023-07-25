@@ -76,7 +76,7 @@ static void btn1_handler(void *arg)
 
 int thread_cut_handler(int arg)
 {
-	bool is_done = false;
+	/*bool is_done = false;
 	bool proceed = false;
 	bool dir = arg == 0;
 	wait = xSemaphoreCreateBinary();
@@ -84,17 +84,17 @@ int thread_cut_handler(int arg)
 	btn->add(ENC_BTN, enc_btn_handler, Buttons::NEGEDGE, &proceed);
 	btn->add(ENC_A, enc_rol_handler);
 	btn->add(ENC_B, enc_rol_dummy);
-	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, &is_done);
+	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, &is_done);*/
 
-	while (1) {
-		const menu_item *item = menu.get();
+	/*while (1) {
+		//const menu_item *item = menu.get();
 		//LCD->clear();
 		//LCD->print(FIRST_ROW, CENTER, "%s %s",
 			//item->name.c_str(), arg ? "LEFT" : "RIGHT");
-		xSemaphoreTake(wait, portMAX_DELAY);
+		//xSemaphoreTake(wait, portMAX_DELAY);
 
-		if (is_done || proceed)
-			break;
+		//if (is_done || proceed)
+			//break;
 	}
 
 	vSemaphoreDelete(wait);
@@ -103,7 +103,7 @@ int thread_cut_handler(int arg)
 	if (proceed) {
 		const menu_item *item = menu.get();
 		thread_cut(item->name.c_str(), item->step, dir);
-	}
+	}*/
 
 	return 0;
 }

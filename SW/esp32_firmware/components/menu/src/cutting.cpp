@@ -51,7 +51,7 @@ static void btn1_handler(void *arg)
 
 int smooth_go_handler(int arg)
 {
-	bool is_done = false;
+	/*bool is_done = false;
 	bool proceed = false;
 	bool dir = arg == 0;
 	wait = xSemaphoreCreateBinary();
@@ -62,8 +62,8 @@ int smooth_go_handler(int arg)
 
 	while (1) {
 		const menu_item *item = menu.get();
-		//LCD->clear();
-		//LCD->print(FIRST_ROW, CENTER, "%s %s",
+		LCD->clear();
+		LCD->print(FIRST_ROW, CENTER, "%s %s",
 			//item->name, arg ? "LEFT" : "RIGHT");
 		xSemaphoreTake(wait, portMAX_DELAY);
 
@@ -77,7 +77,7 @@ int smooth_go_handler(int arg)
 	if (proceed) {
 		const menu_item *item = menu.get();
 		thread_cut(item->name, item->step, dir);
-	}
+	}*/
 
 	return 0;
 }

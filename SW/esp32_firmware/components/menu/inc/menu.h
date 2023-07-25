@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 #include "lcd.h"
 
 void menu_start(const char *version);
@@ -12,7 +13,7 @@ template <typename T> class Child
 	std::vector<T> list;
 	int n = 0;
 public:
-	Child() {}
+	Child() { }
 
 	Child(std::vector<T> child_list) : list(child_list) {}
 
@@ -29,6 +30,10 @@ public:
 	T get_current() {
 		return list[n];
 	}
+
+	T get_first() {
+		return list[0];
+	}
 };
 
 class MenuItem
@@ -39,11 +44,7 @@ protected:
 	MenuItem *parent = nullptr;
 	MenuItem *current;
 public:
-	MenuItem() {}
-
-	MenuItem(std::string title) {
-		title_str = title;
-	}
+	MenuItem() { }
 
 	MenuItem(std::string title, std::vector<MenuItem *> children) {
 		title_str = title;
@@ -60,7 +61,7 @@ public:
 	}
 
 	virtual MenuItem *enter() {
-		parent = this;
+		current->set_parent(this);
 		return current;
 	}
 
@@ -73,6 +74,46 @@ public:
 		auto item = list.get_current();
 		lcd.print(FIRST_ROW,  CENTER, "%s", title_str.c_str());
 		lcd.print(SECOND_ROW, CENTER, "%s", item->title_str.c_str());
+	}
+
+	void set_parent(MenuItem *new_parent) {
+		parent = new_parent;
+	}
+};
+
+class MenuExe : public MenuItem
+{
+	std::function<void()> _handler;
+	bool done = false;
+	bool _run_once;
+public:
+	MenuExe() { }
+
+	MenuExe(std::string title,
+		std::function<void()> handler,
+		bool run_once = true) {
+			title_str = title;
+			_handler = handler;
+			_run_once = run_once;
+		}
+
+	void next() { }
+	void prev() { }
+
+	MenuItem *enter() {
+		return MenuItem::back();
+	}
+
+	void update_lcd(lcd& lcd) {
+		if (_run_once && done)
+			return;
+
+		done = _run_once;
+		_handler();
+
+		lcd.clear();
+		lcd.print(FIRST_ROW,  CENTER, "UPDATE STARTED");
+		delay_ms(500);
 	}
 };
 
