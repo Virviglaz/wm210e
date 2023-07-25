@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include "driver/gpio.h"
 
+#define BUTTON_ENTER			0
+#define BUTTON_NEXT			1
+#define BUTTON_RETURN			2
+
 /* lcd */
 #define LCD_I2C_SDA			12
 #define LCD_I2C_SCL			14

@@ -1,20 +1,18 @@
-#ifndef __THREAD_CUT_H__
-#define __THREAD_CUT_H__
+#ifndef __FEEDRATE_H__
+#define __FEEDRATE_H__
 
 #include <stdint.h>
 #include <vector>
 #include "motor_ctrl.h"
 #include "menu.h"
 
-int thread_cut_handler(int arg);
-
-class Thread_type {
+class FeedRateType {
 public:
 	const char *title;
 	uint32_t step;
 };
 
-static const std::vector<Thread_type> thread_list {
+static const std::vector<FeedRateType> thread_list {
 	{ .title = "M2x0.4",	.step = 50 },
 	{ .title = "M3x0.5",	.step = 40 },
 	{ .title = "M4x0.7",	.step = 57 / 2 },
@@ -27,17 +25,28 @@ static const std::vector<Thread_type> thread_list {
 	{ .title = "M16x2.0",	.step = 10 }
 };
 
-class ThreadMenu : public MenuItem
+static const std::vector<FeedRateType> feedrate_list {
+	{ .title = "0.05 mm/r",	.step = 400 },
+	{ .title = "0.10 mm/r",	.step = 200 },
+	{ .title = "0.25 mm/r",	.step = 80  },
+	{ .title = "0.50 mm/r",	.step = 40  }
+};
+
+class FeedRateMenu : public MenuItem
 {
-	Child<Thread_type> list = thread_list;
-	Thread_type current = list.get_first();
+	Child<FeedRateType> list;
+	FeedRateType current;
 	dir direction;
 public:
-	ThreadMenu() { }
+	FeedRateMenu() { }
 
-	ThreadMenu(std::string title, enum dir dir) {
+	FeedRateMenu(std::string title,
+		   enum dir dir,
+		   Child<FeedRateType> step_list) {
 		title_str = title;
 		direction = dir;
+		list = step_list;
+		current = list.get_first();
 	}
 
 	void next() {
@@ -66,4 +75,4 @@ public:
 	}
 };
 
-#endif /* __THREAD_CUT_H__ */
+#endif /* __FEEDRATE_H__ */

@@ -175,7 +175,7 @@ void thread_cut(lcd& lcd,
 {
 	freq_meter meter(EXT_ENC_Z, false);
 
-	stepper_ctrl *stepper_thread_cut = new stepper_ctrl(step, dir);
+	stepper_ctrl stepper_thread_cut(step, dir);
 	uint32_t freq_prev = UINT32_MAX;
 
 	while (1) {
@@ -185,14 +185,13 @@ void thread_cut(lcd& lcd,
 			lcd.clear();
 			lcd.print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
 			lcd.print(SECOND_ROW, LEFT, "ROT: %u   ",
-				stepper_thread_cut->get_rotations_counter());
+				stepper_thread_cut.get_rotations_counter());
 			freq_prev = freq;
 		}
 
 		int press = btns.wait_for_action(500);
-		if (press == 2)
+		if (press == BUTTON_RETURN)
 			break;
 	}
 
-	delete(stepper_thread_cut);
 }

@@ -1,9 +1,8 @@
 #include "menu.h"
 #include <free_rtos_h.h>
 #include "hardware.h"
-#include "thread_cut.h"
+#include "feedrate.h"
 #include "motor_ctrl.h"
-#include "cutting.h"
 #include <wifi.h>
 #include <ota.h>
 #include <log.h>
@@ -49,21 +48,27 @@ static int start_fw_update()
 
 typedef std::vector<MenuItem *> menu_t;
 
-static ThreadMenu right_thread("RIGHT", CW);
-static ThreadMenu left_thread("LEFT", CCW);
+static FeedRateMenu thread_right("RIGHT", CW, thread_list);
+static FeedRateMenu thread_left("LEFT", CCW, thread_list);
+static FeedRateMenu feed_right("RIGHT", CW, feedrate_list);
+static FeedRateMenu feed_left("LEFT", CCW, feedrate_list);
 
-//static MenuItem manual_feed("MANUAL FEED");
 static MenuItem metric_thread("METRIC THREAD", menu_t {
-	&right_thread,
-	&left_thread
+	&thread_right,
+	&thread_left
 });
+
+static MenuItem manual_feed("MANUAL FEED", menu_t {
+	&feed_right,
+	&feed_left
+});
+
 static MenuExe fw_update("RUN FW UPDATE", start_fw_update);
 static MenuItem top("E-GEAR LATHE", menu_t {
 	&metric_thread,
-	//&manual_feed,
+	&manual_feed,
 	&fw_update
 });
-
 
 void menu_start(const char *version)
 {
@@ -86,18 +91,18 @@ void menu_start(const char *version)
 
 		switch (btns.wait_for_action())
 		{
-		case 0:
+		case BUTTON_ENTER:
 			current = current->enter(lcd, btns);
 			break;
-		case 1:
+		case BUTTON_NEXT:
 			current->next();
 			break;
-		case 2:
+		case BUTTON_RETURN:
 			current = current->back();
 			break;
-		case 3:
+		/*case 3:
 			current->prev();
-			break;
+			break;*/
 		
 		default:
 			break;
