@@ -1,8 +1,6 @@
 #include "menu.h"
-#include "lcd.h"
 #include <free_rtos_h.h>
 #include "hardware.h"
-#include "esp_buttons.h"
 #include "thread_cut.h"
 #include "motor_ctrl.h"
 #include "cutting.h"
@@ -89,7 +87,7 @@ void menu_start(const char *version)
 		switch (btns.wait_for_action())
 		{
 		case 0:
-			current = current->enter();
+			current = current->enter(lcd, btns);
 			break;
 		case 1:
 			current->next();

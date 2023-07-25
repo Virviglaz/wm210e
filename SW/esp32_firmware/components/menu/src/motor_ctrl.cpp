@@ -2,8 +2,9 @@
 #include "hardware.h"
 #include "log.h"
 #include <free_rtos_h.h>
+#include <errno.h>
+#include <string.h>
 #include <esp32_timer.h>
-#include <esp_buttons.h>
 
 /* ESP32 drivers */
 #include "driver/gpio.h"
@@ -166,36 +167,32 @@ private:
 	}
 };
 
-static void btn1_handler(void *arg)
+void thread_cut(lcd& lcd,
+		Buttons& btns,
+		const char *name,
+		uint32_t step,
+		bool dir)
 {
-	xSemaphoreGive((SemaphoreHandle_t)arg);
-}
-
-void thread_cut(lcd& lcd, const char *name, uint32_t step, bool dir)
-{
-	SemaphoreHandle_t wait = xSemaphoreCreateBinary();
-	Buttons *btn = new Buttons();
 	freq_meter meter(EXT_ENC_Z, false);
 
-	btn->add(BTN1, btn1_handler, Buttons::NEGEDGE, (void *)wait);
-
-	lcd.clear();
-	lcd.print(FIRST_ROW, CENTER, "%s", name);
-
 	stepper_ctrl *stepper_thread_cut = new stepper_ctrl(step, dir);
+	uint32_t freq_prev = UINT32_MAX;
 
 	while (1) {
-		if (xSemaphoreTake(wait, pdMS_TO_TICKS(1000)) == pdTRUE)
-			break;
 		uint32_t freq =
 			SPEED_RATIO_CALC(meter.get_frequency<uint32_t>());
-		lcd.print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
-		lcd.print(SECOND_ROW, LEFT, "ROT: %u   ",
-			stepper_thread_cut->get_rotations_counter());
+		if (freq != freq_prev) {
+			lcd.clear();
+			lcd.print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
+			lcd.print(SECOND_ROW, LEFT, "ROT: %u   ",
+				stepper_thread_cut->get_rotations_counter());
+			freq_prev = freq;
+		}
+
+		int press = btns.wait_for_action(500);
+		if (press == 2)
+			break;
 	}
 
-	vSemaphoreDelete(wait);
 	delete(stepper_thread_cut);
-	delete(btn);
-	INFO("Done thread cut");
 }

@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 #include "lcd.h"
+#include "esp_buttons.h"
 
 void menu_start(const char *version);
 
@@ -60,7 +61,7 @@ public:
 		current = list.prev();
 	}
 
-	virtual MenuItem *enter() {
+	virtual MenuItem *enter(lcd& lcd, Buttons& btns) {
 		current->set_parent(this);
 		return current;
 	}
@@ -100,7 +101,7 @@ public:
 	void next() { }
 	void prev() { }
 
-	MenuItem *enter() {
+	MenuItem *enter(lcd& lcd, Buttons& btns) {
 		return MenuItem::back();
 	}
 

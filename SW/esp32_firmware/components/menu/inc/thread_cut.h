@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <vector>
 #include "motor_ctrl.h"
-#include "lcd.h"
 #include "menu.h"
 
 int thread_cut_handler(int arg);
@@ -34,7 +33,7 @@ class ThreadMenu : public MenuItem
 	Thread_type current = list.get_first();
 	dir direction;
 public:
-	ThreadMenu() {}
+	ThreadMenu() { }
 
 	ThreadMenu(std::string title, enum dir dir) {
 		title_str = title;
@@ -49,21 +48,22 @@ public:
 		current = list.prev();
 	}
 
-	MenuItem *enter() {
-		return this;
+	MenuItem *enter(lcd& lcd, Buttons& btns) {
+		auto item = list.get_current();
+		thread_cut(lcd, btns, item.title, item.step, direction == CW);
+		return MenuItem::back();
+	}
+
+	MenuItem *back() {
+		return MenuItem::back();
 	}
 
 	void update_lcd(lcd& lcd) {
-		lcd.clear();
 		auto item = list.get_current();
+		lcd.clear();
 		lcd.print(FIRST_ROW,  CENTER, "%s", title_str.c_str());
 		lcd.print(SECOND_ROW, CENTER, "%s", item.title);
 	}
 };
-
-/*class ThreadCut : public MenuItem
-{
-
-};*/
 
 #endif /* __THREAD_CUT_H__ */
