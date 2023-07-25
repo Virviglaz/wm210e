@@ -7,39 +7,35 @@
 
 void menu_start(const char *version);
 
+template <typename T> class Child
+{
+	std::vector<T> list;
+	int n = 0;
+public:
+	Child() {}
+
+	Child(std::vector<T> child_list) : list(child_list) {}
+
+	T next() {
+		n = n == list.capacity() - 1 ? 0 : n + 1;
+		return list[n];
+	}
+
+	T prev() {
+		n = n == 0 ? list.capacity() - 1 : n - 1;
+		return list[n];
+	}
+
+	T get_current() {
+		return list[n];
+	}
+};
+
 class MenuItem
 {
-	class Child
-	{
-		std::vector<MenuItem *> list;
-		int n = 0;
-	public:
-		Child() {}
-
-		Child(std::vector<MenuItem *> child_list) : list(child_list) {}
-
-		MenuItem *next() {
-			n = n == list.capacity() - 1 ? 0 : n + 1;
-			return list[n];
-		}
-
-		MenuItem *prev() {
-			n = n == 0 ? list.capacity() - 1 : n - 1;
-			return list[n];
-		}
-
-		MenuItem *get_current() {
-			return list[n];
-		}
-
-		std::string& get_title() {
-			return list[n]->title_str;
-		}
-	};
-
 protected:
 	std::string title_str;
-	Child list;
+	Child<MenuItem *> list;
 	MenuItem *parent = nullptr;
 	MenuItem *current;
 public:
@@ -74,8 +70,9 @@ public:
 
 	virtual void update_lcd(lcd& lcd) {
 		lcd.clear();
+		auto item = list.get_current();
 		lcd.print(FIRST_ROW,  CENTER, "%s", title_str.c_str());
-		lcd.print(SECOND_ROW, CENTER, "%s", list.get_title().c_str());
+		lcd.print(SECOND_ROW, CENTER, "%s", item->title_str.c_str());
 	}
 };
 

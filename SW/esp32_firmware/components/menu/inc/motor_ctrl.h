@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+enum dir { CW, CCW };
+
 void thread_cut(const char *name, uint32_t step, bool dir);
 
 #endif /* __MOTOR_CTRL_H__ */

@@ -4,6 +4,7 @@
 #include "hardware.h"
 #include "esp_buttons.h"
 #include "thread_cut.h"
+#include "motor_ctrl.h"
 #include "cutting.h"
 #include <wifi.h>
 #include <ota.h>
@@ -48,67 +49,13 @@ static int start_fw_update(int arg)
 	return 0;
 }
 
-struct menu_item
-{
-	const std::string first_row;
-	const std::string second_row;
-	int (*handler)(int arg);
-	const int arg;
-};
-
-static const std::vector<menu_item> list = { {
-	.first_row = "METRIC THREAD",
-	.second_row = "RIGHT",
-	.handler = thread_cut_handler,
-	.arg = 1,
-}, {
-	.first_row = "METRIC THREAD",
-	.second_row = "LEFT",
-	.handler = thread_cut_handler,
-	.arg = 0,
-}, {
-	.first_row = "FEED",
-	.second_row = "RIGHT",
-	.handler = smooth_go_handler,
-	.arg = 0,
-}, {
-	.first_row = "FEED",
-	.second_row = "LEFT",
-	.handler = smooth_go_handler,
-	.arg = 1,
-}, {
-	.first_row = "START",
-	.second_row = "FW UPDATE",
-	.handler = start_fw_update,
-	.arg = 0,
-} };
-
-
-static SemaphoreHandle_t wait;
-static Menu<menu_item> menu(list);
-
-static void enc_btn_handler(void *arg)
-{
-	bool *proceed = (bool *)arg;
-	*proceed = true;
-	xSemaphoreGive(wait);
-}
-
-static void enc_rol_handler(void *arg)
-{
-	if (gpio_get_level(ENC_B))
-		menu.next();
-	else
-		menu.prev();
-
-	xSemaphoreGive(wait);
-}
-
-static void enc_rol_dummy(void *arg) {}
-
 typedef std::vector<MenuItem *> menu_t;
+
+static ThreadMenu right_thread("RIGHT", CW);
+static ThreadMenu left_thread("LEFT", CCW);
+
 static MenuItem manual_feed("MANUAL FEED");
-static MenuItem metric_thread("METRIC THREAD");
+static MenuItem metric_thread("METRIC THREAD", menu_t { &right_thread, &left_thread });
 static MenuItem top("E-GEAR LATHE", menu_t { &metric_thread, &manual_feed });
 
 
@@ -147,27 +94,4 @@ void menu_start(const char *version)
 			break;
 		}
 	}
-
-	bool proceed = false;
-	wait = xSemaphoreCreateBinary();
-	Buttons *btn = new Buttons(10);
-	btn->add(ENC_BTN, enc_btn_handler, Buttons::NEGEDGE, &proceed);
-	btn->add(ENC_A, enc_rol_handler);
-	btn->add(ENC_B, enc_rol_dummy);
-
-	while (1) {
-		//const menu_item *item = menu.get();
-		//LCD->clear();
-		//LCD->print(FIRST_ROW, CENTER, "%s", item->first_row.c_str());
-		//LCD->print(SECOND_ROW, CENTER, "%s", item->second_row.c_str());
-		xSemaphoreTake(wait, portMAX_DELAY);
-		if (proceed)
-			break;
-	}
-
-	vSemaphoreDelete(wait);
-	delete(btn);
-
-	const menu_item *item = menu.get();
-	item->handler(item->arg);
 }
