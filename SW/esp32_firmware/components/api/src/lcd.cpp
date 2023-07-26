@@ -164,7 +164,7 @@ void lcd::handler(void *arg)
 		hd44780_set_pos(msg->row, msg->col);
 		if (msg->text[0]) {
 			hd44780_print(msg->text);
-			INFO("%s", msg->text);
+			DEBUG("%s", msg->text);
 		}
 
 		free(msg);

@@ -89,7 +89,7 @@ void menu_start(const char *version)
 	while (1) {
 		current->update_lcd(lcd);
 
-		switch (btns.wait_for_action())
+		switch (btns.wait())
 		{
 		case BUTTON_ENTER:
 			current = current->enter(lcd, btns);

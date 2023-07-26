@@ -40,11 +40,23 @@
 /* Timings */
 #define MOTOR_CLK_PULSE_US		50
 #define SPEED_RATIO_CALC(x)		(200 * (x) / 11500)
+#define MOTOR_PULSES_TO_SUPPORT_MM	(800 * 4) /* 800ppm x 4 interrupts */
 
 int hardware_init();
 void fan_start();
 void fan_stop();
 void motor_enable(bool state);
+
+/*
+ * 27T o 800 PPM encoder (generates 800 x 4 = 3200 interrupts / revolution)
+ *     |					o NEMA23 Stepper motor (400 s/r)
+ * 60T O-o 20T BLDC motor			|
+ *       |				    12T	o-O 32T  helical spiral gear
+ *       O 40T spindle				  |
+ *						  o M16x1.5 drive thread
+ *
+ * enc pulses / 20 = 1mm support movement
+ */
 
 /**
  * @brief Build string

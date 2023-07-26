@@ -20,6 +20,24 @@
 #define GPIO_SET(pin, state)	gpio_ll_set_level(&GPIO, pin, state)
 #define GPIO_GET(pin)		gpio_ll_get_level(&GPIO, pin)
 
+/*
+ * 27T o 800 PPM encoder (generates 800 x 4 = 3200 interrupts / revolution)
+ *     |					o NEMA23 Stepper motor (400 s/r)
+ * 60T O-o 20T BLDC motor			|
+ *       |				    12T	o-O 32T  helical spiral gear
+ *       O 40T spindle				  |
+ *						  o M16x1.5 drive thread
+ *
+ * 1mm (support move) =
+ *	1/1,5(thread mm) x 32/12 (gear ratio) x 400 (p/r stepper) =
+ *
+ * 1 spindle rot = 2 (bldc) x 60/27 (enc gear) x 800 (enc ppm) x 4 interrupts
+ *
+ * 4 x 96000 x 2 x 18 / (27 x 25600) = 20
+ *
+ * enc pulses / 20 = 1mm support movement
+ */
+
 class stepper_ctrl
 {
 public:
@@ -70,23 +88,16 @@ public:
 		delete(pull_down_clk);
 	}
 
-	uint32_t get_rotations_counter()
+	float get_abs_position()
 	{
-		return rotations;
+		return (float)position / (float)ratio /
+			MOTOR_PULSES_TO_SUPPORT_MM;
 	}
 
-	int32_t get_position_deg()
-	{
-		return (position_deg / rotation_mult) % 360;
-	}
-
-	uint32_t err_cnt = 0;
 private:
 	uint32_t ratio;
-	const int32_t rotation_mult = 1000000;
-	std::atomic<uint32_t> cnt { 0 };
-	std::atomic<uint32_t> rotations { 0 };
-	std::atomic<int32_t> position_deg { 0 };
+	uint32_t cnt = 0;
+	std::atomic<int32_t> position { 0 };
 	bool dir_invert = false;
 	enum prev_p { ENC_P_A, ENC_P_B } prev_p = ENC_P_A;
 	enum dir { FRONT, REVERS } direction;
@@ -99,36 +110,16 @@ private:
 
 	static void motor_step(stepper_ctrl *s)
 	{
-		/**
-		 * @brief Calcluation
-		 *
-		 * (m) 60T->27T (60:27), 20T->40T (2:1), 800ppm * 4 (2x2 isr)
-		 * Encoder gives 2x2x800 = 3200 isrs/rev
-		 */
-		const int32_t step_deg =
-			s->rotation_mult / 2 * 27 * 3200 / 60 / 360;
 		s->cnt++;
-		s->position_deg +=
-			s->direction == dir::FRONT ? step_deg : - step_deg;
 
-		if (s->direction == dir::FRONT &&
-			s->position_deg >= s->rotation_mult * 360) {
-			s->rotations++;
-			s->position_deg = 0;
-		}
-
-		if (s->direction == dir::REVERS &&
-			s->position_deg <= 0) {
-			s->rotations++;
-			s->position_deg = 0;
-		}
+		if (s->direction == dir::FRONT)
+			s->position++;
+		else
+			s->position--;
 
 		if (s->cnt == s->ratio) {
 			s->cnt = 0;
-			if (GPIO_GET(STP_CLK_PIN))
-				s->err_cnt++;
 			GPIO_SET(STP_CLK_PIN, STP_CLK_POL);
-
 			delayed_action *d = s->pull_down_clk;
 			d->run();
 		}
@@ -176,20 +167,16 @@ void thread_cut(lcd& lcd,
 	freq_meter meter(EXT_ENC_Z, false);
 
 	stepper_ctrl stepper_thread_cut(step, dir);
-	uint32_t freq_prev = UINT32_MAX;
 
 	while (1) {
 		uint32_t freq =
 			SPEED_RATIO_CALC(meter.get_frequency<uint32_t>());
-		if (freq != freq_prev) {
-			lcd.clear();
-			lcd.print(FIRST_ROW, LEFT, "FREQ: %u   ", freq);
-			lcd.print(SECOND_ROW, LEFT, "ROT: %u   ",
-				stepper_thread_cut.get_rotations_counter());
-			freq_prev = freq;
-		}
 
-		int press = btns.wait_for_action(500);
+		lcd.print(FIRST_ROW, LEFT, "FREQ: %-10u", freq);
+		lcd.print(SECOND_ROW, LEFT, "TOOL POS: %-6.2f",
+			stepper_thread_cut.get_abs_position());
+
+		int press = btns.wait(200);
 		if (press == BUTTON_RETURN)
 			break;
 	}
