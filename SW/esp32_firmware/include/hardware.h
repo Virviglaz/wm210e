@@ -41,6 +41,7 @@
 #define MOTOR_CLK_PULSE_US		50
 #define SPEED_RATIO_CALC(x)		(200 * (x) / 11500)
 #define MOTOR_PULSES_TO_SUPPORT_MM	(800 * 4) /* 800ppm x 4 interrupts */
+#define ENC_PULSES_TO_SUPPORT_MM	(20) /* see below */
 
 int hardware_init();
 void fan_start();
@@ -55,7 +56,13 @@ void motor_enable(bool state);
  *       O 40T spindle				  |
  *						  o M16x1.5 drive thread
  *
- * enc pulses / 20 = 1mm support movement
+ * 1mm (support move) =
+ *	1/1,5(thread mm) x 32/12 (gear ratio) x 400 (p/r stepper) =
+ *
+ * 1 spindle rot = 2 (bldc) x 60/27 (enc gear) x 800 (enc ppm) x 4 interrupts
+ *
+ * 4 x 96000 x 2 x 18 / (27 x 25600) = 20
+ * =======> [enc pulses] / [20] = 1mm support movement
  */
 
 /**

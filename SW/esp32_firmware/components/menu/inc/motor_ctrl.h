@@ -10,7 +10,8 @@ enum dir { CW, CCW };
 void thread_cut(lcd& lcd,
 		Buttons& btns,
 		const char *name,
-		uint32_t step,
-		bool dir);
+		float step_mm,
+		bool dir,
+		int limit10);
 
 #endif /* __MOTOR_CTRL_H__ */

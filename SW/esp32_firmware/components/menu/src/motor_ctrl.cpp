@@ -20,23 +20,6 @@
 #define GPIO_SET(pin, state)	gpio_ll_set_level(&GPIO, pin, state)
 #define GPIO_GET(pin)		gpio_ll_get_level(&GPIO, pin)
 
-/*
- * 27T o 800 PPM encoder (generates 800 x 4 = 3200 interrupts / revolution)
- *     |					o NEMA23 Stepper motor (400 s/r)
- * 60T O-o 20T BLDC motor			|
- *       |				    12T	o-O 32T  helical spiral gear
- *       O 40T spindle				  |
- *						  o M16x1.5 drive thread
- *
- * 1mm (support move) =
- *	1/1,5(thread mm) x 32/12 (gear ratio) x 400 (p/r stepper) =
- *
- * 1 spindle rot = 2 (bldc) x 60/27 (enc gear) x 800 (enc ppm) x 4 interrupts
- *
- * 4 x 96000 x 2 x 18 / (27 x 25600) = 20
- * =======> [enc pulses] / [20] = 1mm support movement
- */
-
 class stepper_ctrl
 {
 public:
@@ -96,7 +79,16 @@ public:
 		position = 0;
 	}
 
+	void enable() {
+		is_enabled = true;
+	}
+
+	void disable() {
+		is_enabled = false;
+	}
+
 private:
+	bool is_enabled = true;
 	uint32_t ratio;
 	uint32_t cnt = 0;
 	std::atomic<int32_t> position { 0 };
@@ -151,6 +143,9 @@ private:
 	static void isr_b(void *params)
 	{
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
+		if (s->is_enabled == false)
+			return;
+
 		if (s->prev_p == ENC_P_B)
 			return;
 
@@ -163,19 +158,24 @@ private:
 void thread_cut(lcd& lcd,
 		Buttons& btns,
 		const char *name,
-		uint32_t step,
-		bool dir)
+		float step_mm,
+		bool dir,
+		int limit10)
 {
+	uint32_t step = (uint32_t)((float)ENC_PULSES_TO_SUPPORT_MM / step_mm);
 	freq_meter meter(EXT_ENC_Z, false);
-
 	stepper_ctrl stepper_thread_cut(step, dir);
+
+	lcd.clear();
+	if (limit10)
+		lcd.print(FIRST_ROW, RIGHT, "L:%-5.1f", (float)limit10 / 10);
 
 	while (1) {
 		uint32_t freq =
 			SPEED_RATIO_CALC(meter.get_frequency<uint32_t>());
 
-		lcd.print(FIRST_ROW, LEFT, "FREQ: %-10u", freq);
-		lcd.print(SECOND_ROW, LEFT, "TOOL POS: %-6.2f",
+		lcd.print(FIRST_ROW, LEFT, "FRQ:%-4u", freq);
+		lcd.print(SECOND_ROW, LEFT, "POS:%-6.2f",
 			stepper_thread_cut.get_abs_position());
 
 		int press = btns.wait(200);
