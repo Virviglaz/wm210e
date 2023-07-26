@@ -34,8 +34,7 @@
  * 1 spindle rot = 2 (bldc) x 60/27 (enc gear) x 800 (enc ppm) x 4 interrupts
  *
  * 4 x 96000 x 2 x 18 / (27 x 25600) = 20
- *
- * enc pulses / 20 = 1mm support movement
+ * =======> [enc pulses] / [20] = 1mm support movement
  */
 
 class stepper_ctrl
@@ -88,10 +87,13 @@ public:
 		delete(pull_down_clk);
 	}
 
-	float get_abs_position()
-	{
+	float get_abs_position() {
 		return (float)position / (float)ratio /
 			MOTOR_PULSES_TO_SUPPORT_MM;
+	}
+
+	void clear_abs_position() {
+		position = 0;
 	}
 
 private:
@@ -179,6 +181,8 @@ void thread_cut(lcd& lcd,
 		int press = btns.wait(200);
 		if (press == BUTTON_RETURN)
 			break;
+		else if (press == BUTTON_ENTER)
+			stepper_thread_cut.clear_abs_position();
 	}
 
 }
