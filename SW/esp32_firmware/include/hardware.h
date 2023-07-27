@@ -33,6 +33,9 @@
 #define STP_ENA_PIN			GPIO_NUM_25
 #define STP_DIR_CCW			1
 #define STP_ENA_POL			0
+#define STP_ACC				100
+#define STP_SPEED			1000
+#define STP_BACKLASH_MM			5
 
 /* Fan */
 #define FAN_ENA_PIN			GPIO_NUM_15
@@ -42,6 +45,9 @@
 #define SPEED_RATIO_CALC(x)		(200 * (x) / 11500)
 #define MOTOR_PULSES_TO_SUPPORT_MM	(800 * 4) /* 800ppm x 4 interrupts */
 #define ENC_PULSES_TO_SUPPORT_MM	(20) /* see below */
+#define SUPPORT_MM_TO_PULSES(x)		((x) * 32 * 400 / (1.5 * 12))
+#define MOTOR_BACKLASH_MM		5
+#define STP_ACC_TIME_MS			500
 
 int hardware_init();
 void fan_start();

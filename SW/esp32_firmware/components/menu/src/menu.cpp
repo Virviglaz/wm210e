@@ -48,26 +48,38 @@ static int start_fw_update()
 
 typedef std::vector<MenuItem *> menu_t;
 
-static FeedRateMenu thread_right("RIGHT", CW, thread_list);
-static FeedRateMenu thread_left("LEFT", CCW, thread_list);
-static FeedRateMenu feed_right("RIGHT", CW, feedrate_list);
-static FeedRateMenu feed_left("LEFT", CCW, feedrate_list);
+static FeedRateMenu thread_r("RIGHT", CW, thread_list);
+static FeedRateMenu thread_l("LEFT", CCW, thread_list);
+static FeedRateMenu feed_r("RIGHT", CW, feedrate_list);
+static FeedRateMenu feed_l("LEFT", CCW, feedrate_list);
+static FeedRateMenu limiter_feed_r("LIMITED RIGHT", CW, feedrate_list, 300);
+static FeedRateMenu limiter_feed_l("LIMITED LEFT", CCW, feedrate_list, 300);
+static FeedRateMenu autoreturn_feed_r("AUTORETURN RIGHT", CW, feedrate_list, 300, true);
+static FeedRateMenu autoreturn_feed_l("AUTORETURN LEFT", CCW, feedrate_list, 300, true);
 
 static MenuItem metric_thread("METRIC THREAD", menu_t {
-	&thread_right,
-	&thread_left
+	&thread_r,
+	&thread_l,
 });
 
 static MenuItem manual_feed("MANUAL FEED", menu_t {
-	&feed_right,
-	&feed_left
+	&feed_r,
+	&feed_l,
+});
+
+static MenuItem limited_feed("LIMITED FEED", menu_t {
+	&limiter_feed_r,
+	&limiter_feed_l,
+	&autoreturn_feed_r,
+	&autoreturn_feed_l,
 });
 
 static MenuExe fw_update("RUN FW UPDATE", start_fw_update);
 static MenuItem top("E-GEAR LATHE", menu_t {
 	&metric_thread,
 	&manual_feed,
-	&fw_update
+	&limited_feed,
+	&fw_update,
 });
 
 void menu_start(const char *version)

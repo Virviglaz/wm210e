@@ -37,16 +37,22 @@ class FeedRateMenu : public MenuItem
 	Child<FeedRateType> list;
 	FeedRateType current;
 	dir direction;
+	int limit;
+	bool autoreturn;
 public:
 	FeedRateMenu() { }
 
 	FeedRateMenu(std::string title,
 		   enum dir dir,
-		   Child<FeedRateType> step_list) {
+		   Child<FeedRateType> step_list,
+		   int support_limit = 0,
+		   bool enable_autoreturn = false) {
 		title_str = title;
 		direction = dir;
 		list = step_list;
 		current = list.get_first();
+		limit = support_limit;
+		autoreturn = enable_autoreturn;
 	}
 
 	void next() {
@@ -59,7 +65,8 @@ public:
 
 	MenuItem *enter(lcd& lcd, Buttons& btns) {
 		auto item = list.get_current();
-		thread_cut(lcd, btns, item.title, item.step, direction == CW, 3456);
+		thread_cut(lcd, btns, item.title, item.step, direction,
+			limit, autoreturn);
 		return MenuItem::back();
 	}
 
