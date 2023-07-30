@@ -8,6 +8,7 @@ PRIV_REQUIRES
 	ota
 	app_update
 	drivers
+	esp_timer
 INCLUDE_DIRS
 	""
 	"../components/api/inc"

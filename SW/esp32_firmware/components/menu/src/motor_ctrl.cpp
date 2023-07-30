@@ -83,22 +83,26 @@ public:
 	}
 
 	void enable() {
-		GPIO_SET(STP_ENA_PIN, 1);
+		GPIO_SET(STP_ENA_PIN, !STP_ENA_POL);
 		is_enabled = true;
 	}
 
 	void disable() {
-		GPIO_SET(STP_ENA_PIN, 0);
+		GPIO_SET(STP_ENA_PIN, STP_ENA_POL);
 		is_enabled = false;
 	}
 
 	void set_limit(float lim) {
+		limit_reached = false;
 		max = lim  / ENC_PULSES_TO_SUPPORT_MM *
 			(float)ratio * MOTOR_PULSES_TO_SUPPORT_MM;
 	}
 
 	bool check_limit() {
 		bool ret = limit_reached;
+		if (ret)
+			INFO("LIMIT REACHED! (pos = %ld, lim: %ld)",
+				position, max);
 		limit_reached = false;
 		return ret;
 	}
@@ -109,7 +113,7 @@ private:
 	uint32_t cnt = 0;
 	int32_t max = 0;
 	bool limit_reached = false;
-	std::atomic<int32_t> position { 0 };
+	int32_t position = 0;
 	bool dir_invert = false;
 	enum prev_p { ENC_P_A, ENC_P_B } prev_p = ENC_P_A;
 	enum dir { FRONT, REVERS } direction;
@@ -132,7 +136,7 @@ private:
 			}
 		} else {
 			s->position--;
-			if (s->max && s->position < s->max) {
+			if (s->max && s->position < -s->max) {
 				s->limit_reached = true;
 				return;
 			}
@@ -191,7 +195,8 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 		bool sup_return)	/* Automatic support return */
 {
 	uint32_t step = (uint32_t)((float)ENC_PULSES_TO_SUPPORT_MM / step_mm);
-	float limit = (float)limit10 / 10;
+	int32_t step_dir = dir == CW ? 1 : -1;
+	float limit = (float)(limit10 * step_dir) / 10;
 	freq_meter meter(EXT_ENC_Z, false);
 	stepper_ctrl stepper_thread_cut(step, dir);
 	Encoder<int32_t> *enc = nullptr;
@@ -201,8 +206,10 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 	if (limit10) {
 		lcd.print(FIRST_ROW, RIGHT, "L:%-5.1f", limit);
 		stepper_thread_cut.set_limit(limit);
+		INFO("Setting limit: %.2f [mm]", limit);
 		enc = new Encoder<int32_t>(ENC_A, ENC_B, Encoder<int32_t>::NONE);
 		enc->set_value(limit10);
+		enc->invert();
 		enc_prev = limit10;
 	}
 	if (sup_return)
@@ -219,30 +226,45 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 		int press = btns.wait(200);
 		if (press == BUTTON_RETURN)
 			break;
-		else if (press == BUTTON_ENTER)
+		else if (press == BUTTON_ENTER) {
 			stepper_thread_cut.clear_abs_position();
+			stepper_thread_cut.disable();
+			delay_ms(STP_DELAY_MS);
+			stepper_thread_cut.enable();
+		}
 
 		/* Semiautomatic support return */
 		if (sup_return && stepper_thread_cut.check_limit()) {
+			int32_t step_to_run = (limit + STP_BACKLASH_MM) * \
+				step_mm  * \
+				MOTOR_PULSES_TO_SUPPORT_MM * step_dir / 10;
+			int32_t backlash = STP_BACKLASH_MM * step_mm * \
+				MOTOR_PULSES_TO_SUPPORT_MM * step_dir / 10;
 			stepper_thread_cut.disable();
-			delay_ms(250);
-			Step_motor m(STP_ENA_PIN, STP_CLK_PIN, STP_DIR_PIN, STP_ACC);
-			m.add_segment(-SUPPORT_MM_TO_PULSES(limit +
-				STP_BACKLASH_MM), STP_SPEED);
+			INFO("steps: %ld, backlash: %ld", step_to_run, backlash);
+			Step_motor m(STP_ENA_PIN,
+				     STP_CLK_PIN,
+				     STP_DIR_PIN,
+				     STP_ACC, 50,
+				     nullptr,
+				     STP_CLK_INVERT,
+				     STP_ENA_INVERT);
+			m.init(true);
+			m.add_segment(step_to_run, STP_SPEED);
+			m.add_segment(-backlash, STP_SPEED);
+			m.run();
 			m.wait();
-			delay_ms(250);
-			m.add_segment(SUPPORT_MM_TO_PULSES(STP_BACKLASH_MM), freq);
-			delay_ms(STP_ACC_TIME_MS);
-			m.stop();
+			stepper_thread_cut.clear_abs_position();
+			stepper_thread_cut.check_limit();
 			stepper_thread_cut.enable();
 		}
 
 		/* Update support limit using rotary encoder */
 		if (enc && enc->get_value() != enc_prev) {
 			enc_prev = enc->get_value();
-			float new_limit = (float)enc_prev / 10;
-			lcd.print(FIRST_ROW, RIGHT, "L:%-5.1f", new_limit);
-			stepper_thread_cut.set_limit(new_limit);
+			limit = (float)enc_prev / 10;
+			lcd.print(FIRST_ROW, RIGHT, "L:%-5.1f", limit);
+			stepper_thread_cut.set_limit(limit);
 		}
 	}
 

@@ -4,9 +4,11 @@
 #include <ota.h>
 #include <esp_ota_ops.h>
 #include <esp_encoder.h>
+#include <step_motor.h>
 #include <atomic>
 #include <log.h>
 #include "lcd.h"
+#include "hardware.h"
 
 extern "C" {
 	void app_main();
@@ -32,6 +34,20 @@ void enc_test() {
 	}
 }
 
+void stepper_test() {
+	int i = 0;
+	lcd lcd;
+	lcd.clear();
+	Step_motor m(STP_ENA_PIN, STP_CLK_PIN, STP_DIR_PIN, STP_ACC, 50, nullptr, false, true);
+	m.init(false);
+	while (1) {
+		lcd.print(FIRST_ROW, LEFT, "TEST RUN %d", i++);
+		m.add_segment(5000, STP_SPEED);
+		m.run();
+		m.wait();
+	}
+}
+
 void app_main(void)
 {
 	const esp_app_desc_t *app_desc = esp_app_get_description();
@@ -43,6 +59,7 @@ void app_main(void)
 		return;
 
 	//enc_test();
+	//stepper_test();
 
 	menu_start(app_desc->version);
 
