@@ -79,6 +79,7 @@ public:
 
 	void clear_abs_position() {
 		position = 0;
+		limit_reached = false;
 	}
 
 	void enable() {
