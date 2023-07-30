@@ -1,6 +1,6 @@
 {
 	"idf.adapterTargetName": "esp32",
-	"idf.portWin": "COM16",
+	"idf.portWin": "COM4",
 	"files.associations": {
 		"typeinfo": "cpp",
 		"string.h": "c",
@@ -66,7 +66,13 @@
 		"stdexcept": "cpp",
 		"streambuf": "cpp",
 		"thread": "cpp",
-		"cinttypes": "cpp"
+		"cinttypes": "cpp",
+		"bit": "cpp",
+		"compare": "cpp",
+		"concepts": "cpp",
+		"numbers": "cpp",
+		"semaphore": "cpp",
+		"stop_token": "cpp"
 	},
 	"idf.customAdapterTargetName": "wm210e_esp32",
 	"idf.openOcdConfigs": [
