@@ -21,6 +21,17 @@ static void ota_confirm(void *args)
 	vTaskDelete(NULL);
 }
 
+void enc_test() {
+	lcd lcd;
+	lcd.clear();
+	Encoder<int> enc(ENC_A, ENC_B);
+	while (1) {
+		enc.wait();
+		lcd.print(FIRST_ROW, CENTER, "%-6d", enc.get_value());
+		INFO("%d", enc.get_value());
+	}
+}
+
 void app_main(void)
 {
 	const esp_app_desc_t *app_desc = esp_app_get_description();
@@ -31,8 +42,9 @@ void app_main(void)
 	if (res)
 		return;
 
-	while (1)
-		menu_start(app_desc->version);
+	//enc_test();
+
+	menu_start(app_desc->version);
 
 	return;
 }

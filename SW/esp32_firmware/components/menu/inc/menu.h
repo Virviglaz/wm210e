@@ -114,7 +114,6 @@ public:
 
 		lcd.clear();
 		lcd.print(FIRST_ROW,  CENTER, "UPDATE STARTED");
-		delay_ms(500);
 	}
 };
 

@@ -73,8 +73,8 @@ public:
 	}
 
 	float get_abs_position() {
-		return (float)position / (float)ratio /
-			(float)MOTOR_PULSES_TO_SUPPORT_MM;
+		return (float)position * ENC_PULSES_TO_SUPPORT_MM /
+			(float)ratio / MOTOR_PULSES_TO_SUPPORT_MM;
 	}
 
 	void clear_abs_position() {
@@ -92,7 +92,8 @@ public:
 	}
 
 	void set_limit(float lim) {
-		max = lim * (float)ratio * (float)MOTOR_PULSES_TO_SUPPORT_MM;
+		max = lim  / ENC_PULSES_TO_SUPPORT_MM *
+			(float)ratio * MOTOR_PULSES_TO_SUPPORT_MM;
 	}
 
 	bool check_limit() {
@@ -122,15 +123,15 @@ private:
 	{
 		s->cnt++;
 
-		if (s->direction == dir::FRONT) {
+		if (s->direction == dir::REVERS) {
 			s->position++;
-			if (s->position > s->max) {
+			if (s->max && s->position > s->max) {
 				s->limit_reached = true;
 				return;
 			}
 		} else {
 			s->position--;
-			if (s->position < s->max) {
+			if (s->max && s->position < s->max) {
 				s->limit_reached = true;
 				return;
 			}
@@ -199,7 +200,7 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 	if (limit10) {
 		lcd.print(FIRST_ROW, RIGHT, "L:%-5.1f", limit);
 		stepper_thread_cut.set_limit(limit);
-		enc = new Encoder<int32_t>(ENC_A, ENC_B);
+		enc = new Encoder<int32_t>(ENC_A, ENC_B, Encoder<int32_t>::NONE);
 		enc->set_value(limit10);
 		enc_prev = limit10;
 	}
@@ -211,7 +212,7 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 			SPEED_RATIO_CALC(meter.get_frequency<float>());
 		float abs_pos = stepper_thread_cut.get_abs_position();
 
-		lcd.print(FIRST_ROW, LEFT, "FRQ:%-4.0f", freq);
+		lcd.print(FIRST_ROW,  LEFT, "FRQ:%-4.0f", freq);
 		lcd.print(SECOND_ROW, LEFT, "POS:%-6.2f", abs_pos);
 
 		int press = btns.wait(200);

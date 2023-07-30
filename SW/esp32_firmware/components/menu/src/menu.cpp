@@ -50,12 +50,12 @@ typedef std::vector<MenuItem *> menu_t;
 
 static FeedRateMenu thread_r("RIGHT", CW, thread_list);
 static FeedRateMenu thread_l("LEFT", CCW, thread_list);
-static FeedRateMenu feed_r("RIGHT", CW, feedrate_list);
-static FeedRateMenu feed_l("LEFT", CCW, feedrate_list);
-static FeedRateMenu limiter_feed_r("LIMITED RIGHT", CW, feedrate_list, 300);
-static FeedRateMenu limiter_feed_l("LIMITED LEFT", CCW, feedrate_list, 300);
-static FeedRateMenu autoreturn_feed_r("AUTORETURN RIGHT", CW, feedrate_list, 300, true);
-static FeedRateMenu autoreturn_feed_l("AUTORETURN LEFT", CCW, feedrate_list, 300, true);
+static FeedRateMenu feed_r("RIGHT", CCW, feedrate_list);
+static FeedRateMenu feed_l("LEFT", CW, feedrate_list);
+static FeedRateMenu limiter_feed_r("LIMITED RIGHT", CCW, feedrate_list, 300);
+static FeedRateMenu limiter_feed_l("LIMITED LEFT", CW, feedrate_list, 300);
+static FeedRateMenu autoreturn_feed_r("AUTORETURN RIGHT", CCW, feedrate_list, 300, true);
+static FeedRateMenu autoreturn_feed_l("AUTORETURN LEFT", CW, feedrate_list, 300, true);
 
 static MenuItem metric_thread("METRIC THREAD", menu_t {
 	&thread_r,

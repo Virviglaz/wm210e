@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include "driver/gpio.h"
 
-#define BUTTON_ENTER			0
+#define BUTTON_RETURN			0
 #define BUTTON_NEXT			1
-#define BUTTON_RETURN			2
+#define BUTTON_ENTER			2
 
 /* lcd */
 #define LCD_I2C_SDA			12
@@ -43,8 +43,8 @@
 /* Timings */
 #define MOTOR_CLK_PULSE_US		50
 #define SPEED_RATIO_CALC(x)		(200 * (x) / 11500)
-#define MOTOR_PULSES_TO_SUPPORT_MM	(800 * 4) /* 800ppm x 4 interrupts */
-#define ENC_PULSES_TO_SUPPORT_MM	(20) /* see below */
+#define MOTOR_PULSES_TO_SUPPORT_MM	(float)(2 * 800 * 4 * 60 / 27)
+#define ENC_PULSES_TO_SUPPORT_MM	(float)(20) /* 1r spindle == enc / 20 */
 #define SUPPORT_MM_TO_PULSES(x)		((x) * 32 * 400 / (1.5 * 12))
 #define MOTOR_BACKLASH_MM		5
 #define STP_ACC_TIME_MS			500
