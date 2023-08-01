@@ -63,15 +63,15 @@ static MenuItem metric_thread("METRIC THREAD", menu_t {
 });
 
 static MenuItem manual_feed("MANUAL FEED", menu_t {
-	&feed_r,
 	&feed_l,
+	&feed_r,
 });
 
 static MenuItem limited_feed("LIMITED FEED", menu_t {
-	&limiter_feed_r,
 	&limiter_feed_l,
-	&autoreturn_feed_r,
+	&limiter_feed_r,
 	&autoreturn_feed_l,
+	&autoreturn_feed_r,
 });
 
 static MenuExe fw_update("RUN FW UPDATE", start_fw_update);

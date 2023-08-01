@@ -53,7 +53,7 @@ public:
 			EXT_ENC_B, stepper_ctrl::isr_b, this));
 
 		ESP_ERROR_CHECK(gpio_set_level(STP_DIR_PIN, 0));
-		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, STP_ENA_POL));
+		enable();
 
 		fan_start();
 
@@ -66,7 +66,7 @@ public:
 		gpio_isr_handler_remove(EXT_ENC_B);
 		gpio_reset_pin(EXT_ENC_A);
 		gpio_reset_pin(EXT_ENC_B);
-		ESP_ERROR_CHECK(gpio_set_level(STP_ENA_PIN, !STP_ENA_POL));
+		disable();
 
 		fan_stop();
 		delete(pull_down_clk);
@@ -79,17 +79,20 @@ public:
 
 	void clear_abs_position() {
 		position = 0;
-		limit_reached = false;
+		cnt = 0;
+		check_limit();
 	}
 
 	void enable() {
-		GPIO_SET(STP_ENA_PIN, !STP_ENA_POL);
+		GPIO_SET(STP_ENA_PIN, STP_ENA_POL);
 		is_enabled = true;
+		INFO("Stepper enabled");
 	}
 
 	void disable() {
-		GPIO_SET(STP_ENA_PIN, STP_ENA_POL);
+		GPIO_SET(STP_ENA_PIN, !STP_ENA_POL);
 		is_enabled = false;
+		INFO("Stepper disabled");
 	}
 
 	void set_limit(float lim) {
@@ -105,6 +108,13 @@ public:
 				position, max);
 		limit_reached = false;
 		return ret;
+	}
+
+	void reset() {
+		clear_abs_position();
+		disable();
+		delay_ms(STP_DELAY_MS);
+		enable();
 	}
 
 private:
@@ -155,8 +165,10 @@ private:
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
 		if (s->prev_p == ENC_P_A)
 			return;
-
 		s->prev_p = ENC_P_A;
+
+		if (s->is_enabled == false)
+			return;
 
 		if (GPIO_GET(EXT_ENC_A)) {
 			if (GPIO_GET(EXT_ENC_B)) {
@@ -174,13 +186,12 @@ private:
 	static void isr_b(void *params)
 	{
 		stepper_ctrl *s = static_cast<stepper_ctrl *>(params);
-		if (s->is_enabled == false)
-			return;
-
 		if (s->prev_p == ENC_P_B)
 			return;
-
 		s->prev_p = ENC_P_B;
+
+		if (s->is_enabled == false)
+			return;
 
 		motor_step(s);
 	}
@@ -214,7 +225,7 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 	}
 	if (sup_return)
 		lcd.print(SECOND_ROW, RIGHT, "+RTN");
-
+	
 	while (1) {
 		float freq =
 			SPEED_RATIO_CALC(meter.get_frequency<float>());
@@ -226,12 +237,8 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 		int press = btns.wait(200);
 		if (press == BUTTON_RETURN)
 			break;
-		else if (press == BUTTON_ENTER) {
-			stepper_thread_cut.clear_abs_position();
-			stepper_thread_cut.disable();
-			delay_ms(STP_DELAY_MS);
-			stepper_thread_cut.enable();
-		}
+		else if (press == BUTTON_ENTER)
+			stepper_thread_cut.reset();
 
 		/* Semiautomatic support return */
 		if (sup_return && stepper_thread_cut.check_limit()) {
@@ -254,9 +261,7 @@ void thread_cut(lcd& lcd,		/* LCD driver */
 			m.add_segment(-backlash, STP_SPEED);
 			m.run();
 			m.wait();
-			stepper_thread_cut.clear_abs_position();
-			stepper_thread_cut.check_limit();
-			stepper_thread_cut.enable();
+			stepper_thread_cut.reset();
 		}
 
 		/* Update support limit using rotary encoder */

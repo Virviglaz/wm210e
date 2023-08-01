@@ -38,7 +38,7 @@
 #define STP_BACKLASH_MM			5
 #define STP_CLK_INVERT			false
 #define STP_ENA_INVERT			true
-#define STP_DELAY_MS			250
+#define STP_DELAY_MS			1000
 
 /* Fan */
 #define FAN_ENA_PIN			GPIO_NUM_15
