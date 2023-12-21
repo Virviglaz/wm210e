@@ -30,7 +30,7 @@ jobs:
       - name: SDK is ready
         run: cd ~/
       - name: Downgrade setuptools
-        run: sudo pip install setuptools==67.4.0
+        run: pip install setuptools==67.4.0
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
