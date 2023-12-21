@@ -29,12 +29,12 @@ jobs:
         run: cd ~/esp/esp-idf && ./install.sh esp32 && . ./export.sh && env >> "$GITHUB_ENV"
       - name: SDK is ready
         run: cd ~/
+      - name: Downgrade setuptools
+        run: sudo pip install setuptools==67.4.0
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      #- name: sourcing SDK
-      #  run: . $HOME/esp/esp-idf/export.sh
       - name: Build
         run: idf.py build
 
