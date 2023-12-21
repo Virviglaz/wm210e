@@ -29,12 +29,18 @@ static ota_t ota = {
 	.gpio_ota_cancel_workaround = 0,
 };
 
+wifi_credentials_t wifi_aps[] = {
+	{ "Tower",	"555666777",	WIFI_AP_AUTH_WPA2_PSK },
+	{ "Tower3",	"555666777",	WIFI_AP_AUTH_WPA2_PSK },
+	{ "Tower24GHz",	"555666777",	WIFI_AP_AUTH_WPA2_PSK },
+};
+
 static int start_fw_update()
 {
 	const esp_app_desc_t *app_desc = esp_app_get_description();
 	ota.version = app_desc->version;
 
-	wifi_init("Tower", "555666777");
+	wifi_start(wifi_aps, 3);
 	ota_start(&ota);
 
 	INFO("Firmware version: %s", ota.version);
