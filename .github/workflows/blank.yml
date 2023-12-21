@@ -27,8 +27,6 @@ jobs:
         run: mkdir -p ~/esp && cd ~/esp && git clone --recursive https://github.com/Virviglaz/esp-idf.git --branch=Virviglaz/myesp32_v5.0 --single-branch --depth=1
       - name: install ESP_IDF
         run: cd ~/esp/esp-idf && ./install.sh esp32
-      - name: setup environment
-        run: . $HOME/esp/esp-idf/export.sh
       - name: SDK is ready
         run: cd ~/
 
