@@ -35,6 +35,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
+      - name: sourcing SDK
+        run: . $HOME/esp/esp-idf/export.sh
       - name: Build
         run: idf.py build
 
