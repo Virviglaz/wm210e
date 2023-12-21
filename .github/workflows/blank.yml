@@ -28,7 +28,7 @@ jobs:
       - name: install ESP_IDF
         run: cd ~/esp/esp-idf && ./install.sh esp32
       - name: setup environment
-        run: . $HOME/esp/esp-idf/export.sh && alias get_idf='. $HOME/esp/esp-idf/export.sh'
+        run: . $HOME/esp/esp-idf/export.sh && alias get_idf='. $HOME/esp/esp-idf/export.sh' && get_idf
       - name: SDK is ready
         run: cd ~/
 
